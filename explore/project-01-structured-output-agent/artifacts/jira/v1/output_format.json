@@ -1,0 +1,19 @@
+{
+  "fields": {
+    "project": {
+      "key": "PROJ"
+    },
+    "summary": "Rest API test ticket",
+    "description": "Creating an issue using the REST API",
+    "issuetype": {
+      "name": "Bug"
+    },
+    "priority": {
+      "name": "Medium"
+    },
+    "labels": [
+      "api",
+      "automation"
+    ]
+  }
+}
