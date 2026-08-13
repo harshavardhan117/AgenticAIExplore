@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from engine.orchestrator import StructuredOutputOrchestrator
+from engine.composition import build_orchestrator
 from errors.codes import ErrorCode
 from errors.exceptions import StructuredOutputError
 from responses.models import ExecutionResponse
@@ -11,7 +11,7 @@ from responses.models import ExecutionResponse
 def run(user_request: dict[str, Any]) -> ExecutionResponse:
     """Run one user request and return a JSON-ready execution response."""
     try:
-        orchestrator = StructuredOutputOrchestrator()
+        orchestrator = build_orchestrator()
         return orchestrator.execute(user_request)
     except StructuredOutputError as error:
         return ExecutionResponse(
