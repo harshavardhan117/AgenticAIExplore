@@ -31,8 +31,7 @@ Status: active learning branch.
 
 ### Learning artifacts
 
-- Added [Baseline UML Lite diagram](structured-output-agent-uml-clean-v2.excalidraw).
-- Added [Optimization V3 UML Lite diagram](structured-output-agent-uml-optimization-v3.excalidraw).
+- Updated the [V2 UML Lite diagram](structured-output-agent-uml-clean-v2.excalidraw) with the optimized architecture.
 - Reviewed OOP relationships, SOLID principles, and creational/structural/behavioral design patterns against this codebase.
 
 ### Verification
@@ -71,7 +70,6 @@ Status: complete baseline.
 - Uses domain error codes and safe outer error responses.
 - Keeps provider credentials and user configuration outside the repository.
 
-### Tests and diagram
+### Tests
 
 - Added unit tests for baseline artifact, prompt, provider, validation, retry, and error behavior.
-- Added the original UML Lite diagram: [structured-output-agent-uml-clean-v2.excalidraw](structured-output-agent-uml-clean-v2.excalidraw).
