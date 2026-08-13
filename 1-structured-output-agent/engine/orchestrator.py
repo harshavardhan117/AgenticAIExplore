@@ -1,16 +1,13 @@
 """Entry point for coordinating structured-output generation."""
 
-from pathlib import Path
 from typing import Any
 
 from artifacts.models import ResolvedArtifact
 from artifacts.resolver import ArtifactResolver
-from artifacts.strategies import InlineArtifactStrategy, StoredFileArtifactStrategy
 from errors.codes import ErrorCode
 from prompts.builder import PromptBuilder
 from prompts.models import Prompt
 from prompts.repair_builder import RepairPromptBuilder
-from providers.factory import ProviderFactory
 from providers.models import ModelResponse
 from providers.service import ProviderService
 from responses.models import ExecutionResponse
@@ -23,20 +20,20 @@ MAX_REPAIR_ATTEMPTS = 2
 class StructuredOutputOrchestrator:
     """Accepts a request and will coordinate the project modules."""
 
-    def __init__(self) -> None:
-        """Register the artifact strategies available to this application."""
-        artifact_root = Path(__file__).parent.parent / "artifacts"
-
-        self.artifact_resolver = ArtifactResolver(
-            strategies=[
-                InlineArtifactStrategy(),
-                StoredFileArtifactStrategy(artifact_root),
-            ]
-        )
-        self.prompt_builder = PromptBuilder()
-        self.repair_prompt_builder = RepairPromptBuilder()
-        self.provider_service = ProviderService(ProviderFactory())
-        self.response_validator = JsonResponseValidator()
+    def __init__(
+        self,
+        artifact_resolver: ArtifactResolver,
+        prompt_builder: PromptBuilder,
+        repair_prompt_builder: RepairPromptBuilder,
+        provider_service: ProviderService,
+        response_validator: JsonResponseValidator,
+    ) -> None:
+        """Store the collaborators needed to coordinate one request."""
+        self.artifact_resolver = artifact_resolver
+        self.prompt_builder = prompt_builder
+        self.repair_prompt_builder = repair_prompt_builder
+        self.provider_service = provider_service
+        self.response_validator = response_validator
 
     def execute(self, user_request: dict[str, Any]) -> ExecutionResponse:
         """Resolve a request, generate output, and validate its JSON shape.
