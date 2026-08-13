@@ -1,5 +1,6 @@
 """Entry point for coordinating structured-output generation."""
 
+import logging
 from typing import Any
 
 from artifacts.models import ResolvedArtifact
@@ -15,6 +16,7 @@ from validation.json_response_validator import JsonResponseValidator, JsonValida
 
 
 MAX_REPAIR_ATTEMPTS = 2
+logger = logging.getLogger(__name__)
 
 
 class StructuredOutputOrchestrator:
@@ -39,6 +41,10 @@ class StructuredOutputOrchestrator:
         """Resolve a request, build its prompt, and coordinate generation."""
         resolved_artifact: ResolvedArtifact = self.artifact_resolver.resolve(
             user_request
+        )
+        logger.info(
+            "Structured-output artifact resolved",
+            extra={"provider": resolved_artifact.provider_name},
         )
         prompt: Prompt = self.prompt_builder.build(resolved_artifact)
 
@@ -66,6 +72,14 @@ class StructuredOutputOrchestrator:
             )
 
             if validation_result.is_valid:
+                logger.info(
+                    "Structured-output model output validated",
+                    extra={
+                        "provider": model_response.provider_name,
+                        "request_id": model_response.request_id,
+                        "retry_count": attempt_number,
+                    },
+                )
                 return ExecutionResponse(
                     success=True,
                     message="Structured output generated successfully",
@@ -76,6 +90,14 @@ class StructuredOutputOrchestrator:
                 )
 
             if attempt_number == MAX_REPAIR_ATTEMPTS:
+                logger.warning(
+                    "Structured-output model output remained invalid",
+                    extra={
+                        "provider": model_response.provider_name,
+                        "request_id": model_response.request_id,
+                        "retry_count": attempt_number,
+                    },
+                )
                 return ExecutionResponse(
                     success=False,
                     message="Model output did not match the required JSON format",
@@ -85,6 +107,14 @@ class StructuredOutputOrchestrator:
                     retry_count=attempt_number,
                 )
 
+            logger.warning(
+                "Structured-output retrying invalid model output",
+                extra={
+                    "provider": model_response.provider_name,
+                    "request_id": model_response.request_id,
+                    "retry_count": attempt_number,
+                },
+            )
             current_prompt = self.repair_prompt_builder.build(
                 original_prompt=original_prompt,
                 validation_result=validation_result,
