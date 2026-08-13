@@ -7,17 +7,30 @@ from providers.contracts import GenerationProvider
 
 
 class ProviderFactory:
-    """Create the configured adapter for a supported generation provider."""
+    """Create provider adapters from builders registered by the application."""
 
     def __init__(self) -> None:
-        """Register provider names with the functions that build them."""
-        self._provider_builders: dict[str, Callable[[], GenerationProvider]] = {
-            "oci": self._create_oci_provider,
-            "openai": self._create_openai_provider,
-        }
+        """Start with no providers; application wiring decides what to enable."""
+        self._provider_builders: dict[str, Callable[[], GenerationProvider]] = {}
+
+    def register(
+        self,
+        provider_name: str,
+        provider_builder: Callable[[], GenerationProvider],
+    ) -> None:
+        """Register one provider builder under a normalized provider name."""
+        normalized_provider_name = provider_name.strip().lower()
+
+        if not normalized_provider_name:
+            raise ValueError("provider_name must be non-empty text")
+
+        if normalized_provider_name in self._provider_builders:
+            raise ValueError(f"Provider is already registered: {provider_name}")
+
+        self._provider_builders[normalized_provider_name] = provider_builder
 
     def create(self, provider_name: str) -> GenerationProvider:
-        """Create an OCI or OpenAI provider from the requested name."""
+        """Create the provider requested by name."""
         normalized_provider_name = provider_name.strip().lower()
         provider_builder = self._provider_builders.get(normalized_provider_name)
 
@@ -25,19 +38,3 @@ class ProviderFactory:
             raise UnsupportedProviderError(f"Unsupported provider: {provider_name}")
 
         return provider_builder()
-
-    @staticmethod
-    def _create_oci_provider() -> GenerationProvider:
-        """Create an OCI provider using its environment configuration."""
-        from providers.oci_config import OciProviderConfig
-        from providers.oci_provider import OciGenerationProvider
-
-        return OciGenerationProvider(OciProviderConfig.from_environment())
-
-    @staticmethod
-    def _create_openai_provider() -> GenerationProvider:
-        """Create an OpenAI provider using its environment configuration."""
-        from providers.openai_config import OpenAiProviderConfig
-        from providers.openai_provider import OpenAiGenerationProvider
-
-        return OpenAiGenerationProvider(OpenAiProviderConfig.from_environment())

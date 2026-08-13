@@ -1,5 +1,8 @@
 """OpenAI implementation of the generation-provider contract."""
 
+import logging
+import time
+
 from openai import OpenAI
 
 from prompts.models import Prompt, PromptMessage
@@ -8,6 +11,7 @@ from providers.models import ModelResponse
 
 
 MAX_OUTPUT_TOKENS = 1024
+logger = logging.getLogger(__name__)
 
 
 class OpenAiGenerationProvider:
@@ -33,17 +37,43 @@ class OpenAiGenerationProvider:
 
     def generate(self, prompt: Prompt) -> ModelResponse:
         """Send a prompt to OpenAI and return a normalized model response."""
-        response = self.client.responses.create(
-            model=self.config.model_id,
-            input=[
-                self._to_openai_input_message(prompt_message)
-                for prompt_message in prompt.messages
-            ],
-            max_output_tokens=MAX_OUTPUT_TOKENS,
+        started_at = time.perf_counter()
+        logger.info("OpenAI model call started")
+
+        try:
+            response = self.client.responses.create(
+                model=self.config.model_id,
+                input=[
+                    self._to_openai_input_message(prompt_message)
+                    for prompt_message in prompt.messages
+                ],
+                max_output_tokens=MAX_OUTPUT_TOKENS,
+            )
+        except Exception as error:
+            duration_ms = round((time.perf_counter() - started_at) * 1000)
+            logger.warning(
+                "OpenAI model call failed",
+                extra={
+                    "provider": "openai",
+                    "duration_ms": duration_ms,
+                    "error_type": type(error).__name__,
+                },
+            )
+            raise
+
+        request_id = getattr(response, "_request_id", None)
+        duration_ms = round((time.perf_counter() - started_at) * 1000)
+        logger.info(
+            "OpenAI model call finished",
+            extra={
+                "provider": "openai",
+                "request_id": request_id,
+                "duration_ms": duration_ms,
+            },
         )
 
         return ModelResponse(
             text=response.output_text,
             provider_name="openai",
-            request_id=getattr(response, "_request_id", None),
+            request_id=request_id,
         )

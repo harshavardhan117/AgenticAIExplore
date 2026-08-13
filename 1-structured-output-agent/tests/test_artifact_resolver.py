@@ -11,9 +11,10 @@ from errors.exceptions import ArtifactNotFoundError, InvalidArtifactError, Inval
 
 def make_resolver(artifact_root):
     """Create a resolver with both supported resolution strategies."""
-    return ArtifactResolver(
-        [InlineArtifactStrategy(), StoredFileArtifactStrategy(artifact_root)]
-    )
+    resolver = ArtifactResolver()
+    resolver.register(InlineArtifactStrategy())
+    resolver.register(StoredFileArtifactStrategy(artifact_root))
+    return resolver
 
 
 def test_resolves_an_inline_output_format_and_defaults_to_oci(tmp_path) -> None:
