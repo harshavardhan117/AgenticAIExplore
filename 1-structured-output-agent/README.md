@@ -36,10 +36,9 @@ main.run()
 
 The current optimized design keeps object wiring in `engine/composition.py`, while the orchestrator coordinates the request flow. Providers and artifact strategies are registered in their own modules, making future additions easier.
 
-Editable diagrams:
+Editable diagram:
 
-- [Baseline UML Lite diagram](structured-output-agent-uml-clean-v2.excalidraw)
-- [Optimization V3 UML Lite diagram](structured-output-agent-uml-optimization-v3.excalidraw)
+- [V2 UML Lite diagram](structured-output-agent-uml-clean-v2.excalidraw)
 
 See [CHANGELOG.md](CHANGELOG.md) for the V1 baseline and V2 optimization history.
 
