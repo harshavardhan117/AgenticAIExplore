@@ -36,15 +36,24 @@ class StructuredOutputOrchestrator:
         self.response_validator = response_validator
 
     def execute(self, user_request: dict[str, Any]) -> ExecutionResponse:
-        """Resolve a request, generate output, and validate its JSON shape.
-
-        Retry handling will be added here one module at a time.
-        """
+        """Resolve a request, build its prompt, and coordinate generation."""
         resolved_artifact: ResolvedArtifact = self.artifact_resolver.resolve(
             user_request
         )
         prompt: Prompt = self.prompt_builder.build(resolved_artifact)
-        current_prompt = prompt
+
+        return self._generate_with_retries(
+            original_prompt=prompt,
+            resolved_artifact=resolved_artifact,
+        )
+
+    def _generate_with_retries(
+        self,
+        original_prompt: Prompt,
+        resolved_artifact: ResolvedArtifact,
+    ) -> ExecutionResponse:
+        """Generate, validate, and repair invalid model output when allowed."""
+        current_prompt = original_prompt
 
         for attempt_number in range(MAX_REPAIR_ATTEMPTS + 1):
             model_response: ModelResponse = self.provider_service.generate(
@@ -77,7 +86,7 @@ class StructuredOutputOrchestrator:
                 )
 
             current_prompt = self.repair_prompt_builder.build(
-                original_prompt=prompt,
+                original_prompt=original_prompt,
                 validation_result=validation_result,
             )
 
