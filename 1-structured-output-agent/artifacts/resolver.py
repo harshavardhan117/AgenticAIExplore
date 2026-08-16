@@ -8,11 +8,15 @@ from errors.exceptions import InvalidInputError
 
 
 class ArtifactResolver:
-    """Select a strategy that resolves a user request."""
+    """Select from the artifact strategies registered by the application."""
 
-    def __init__(self, strategies: list[ArtifactResolutionStrategy]) -> None:
-        """Store the available artifact-resolution strategies."""
-        self.strategies = strategies
+    def __init__(self) -> None:
+        """Start with no strategies; application wiring decides what to enable."""
+        self.strategies: list[ArtifactResolutionStrategy] = []
+
+    def register(self, strategy: ArtifactResolutionStrategy) -> None:
+        """Add one strategy to the resolver's ordered selection list."""
+        self.strategies.append(strategy)
 
     def resolve(self, user_request: dict[str, Any]) -> ResolvedArtifact:
         """Choose a strategy and create a resolved artifact."""

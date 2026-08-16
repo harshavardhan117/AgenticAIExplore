@@ -34,7 +34,7 @@ class BrokenOrchestrator:
 
 
 def test_run_returns_the_orchestrator_response(monkeypatch) -> None:
-    monkeypatch.setattr(main, "StructuredOutputOrchestrator", SuccessfulOrchestrator)
+    monkeypatch.setattr(main, "build_orchestrator", SuccessfulOrchestrator)
 
     response = main.run({"user_summary": "anything"})
 
@@ -43,7 +43,7 @@ def test_run_returns_the_orchestrator_response(monkeypatch) -> None:
 
 
 def test_run_converts_a_known_exception_to_a_safe_error_response(monkeypatch) -> None:
-    monkeypatch.setattr(main, "StructuredOutputOrchestrator", InvalidInputOrchestrator)
+    monkeypatch.setattr(main, "build_orchestrator", InvalidInputOrchestrator)
 
     response = main.run({})
 
@@ -53,7 +53,7 @@ def test_run_converts_a_known_exception_to_a_safe_error_response(monkeypatch) ->
 
 
 def test_run_hides_unexpected_error_details(monkeypatch) -> None:
-    monkeypatch.setattr(main, "StructuredOutputOrchestrator", BrokenOrchestrator)
+    monkeypatch.setattr(main, "build_orchestrator", BrokenOrchestrator)
 
     response = main.run({})
 

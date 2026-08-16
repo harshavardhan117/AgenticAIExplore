@@ -3,7 +3,10 @@
 from artifacts.models import ResolvedArtifact
 from engine.orchestrator import StructuredOutputOrchestrator
 from errors.codes import ErrorCode
+from prompts.builder import PromptBuilder
+from prompts.repair_builder import RepairPromptBuilder
 from providers.models import ModelResponse
+from validation.json_response_validator import JsonResponseValidator
 
 
 class FixedArtifactResolver:
@@ -30,11 +33,15 @@ class SequencedProviderService:
 
 
 def build_orchestrator_with(responses: list[ModelResponse]):
-    """Build an orchestrator and replace only its external provider dependency."""
-    orchestrator = StructuredOutputOrchestrator()
-    orchestrator.artifact_resolver = FixedArtifactResolver()
+    """Build an orchestrator with controlled test dependencies."""
     provider_service = SequencedProviderService(responses)
-    orchestrator.provider_service = provider_service
+    orchestrator = StructuredOutputOrchestrator(
+        artifact_resolver=FixedArtifactResolver(),
+        prompt_builder=PromptBuilder(),
+        repair_prompt_builder=RepairPromptBuilder(),
+        provider_service=provider_service,
+        response_validator=JsonResponseValidator(),
+    )
     return orchestrator, provider_service
 
 
