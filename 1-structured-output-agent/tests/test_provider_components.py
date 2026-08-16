@@ -42,11 +42,19 @@ def test_factory_rejects_an_unsupported_provider() -> None:
 def test_factory_normalizes_provider_name_before_selecting_a_builder() -> None:
     factory = ProviderFactory()
     fake_provider = FakeProvider()
-    factory._provider_builders["oci"] = lambda: fake_provider
+    factory.register("oci", lambda: fake_provider)
 
     provider = factory.create(" OCI ")
 
     assert provider is fake_provider
+
+
+def test_factory_rejects_a_duplicate_provider_registration() -> None:
+    factory = ProviderFactory()
+    factory.register("fake", FakeProvider)
+
+    with pytest.raises(ValueError, match="already registered"):
+        factory.register("FAKE", FakeProvider)
 
 
 def test_provider_service_delegates_to_the_provider_created_by_its_factory() -> None:

@@ -1,5 +1,8 @@
 """OCI implementation of the generation-provider contract."""
 
+import logging
+import time
+
 import oci
 
 from prompts.models import Prompt, PromptMessage
@@ -8,6 +11,7 @@ from providers.models import ModelResponse
 
 
 MAX_COMPLETION_TOKENS = 1024
+logger = logging.getLogger(__name__)
 
 
 class OciGenerationProvider:
@@ -67,12 +71,38 @@ class OciGenerationProvider:
 
     def generate(self, prompt: Prompt) -> ModelResponse:
         """Send a prompt to OCI and return a normalized model response."""
-        response = self.client.chat(self._build_chat_details(prompt))
+        started_at = time.perf_counter()
+        logger.info("OCI model call started")
+
+        try:
+            response = self.client.chat(self._build_chat_details(prompt))
+        except Exception as error:
+            duration_ms = round((time.perf_counter() - started_at) * 1000)
+            logger.warning(
+                "OCI model call failed",
+                extra={
+                    "provider": "oci",
+                    "duration_ms": duration_ms,
+                    "error_type": type(error).__name__,
+                },
+            )
+            raise
+
+        request_id = getattr(response, "request_id", None)
+        duration_ms = round((time.perf_counter() - started_at) * 1000)
+        logger.info(
+            "OCI model call finished",
+            extra={
+                "provider": "oci",
+                "request_id": request_id,
+                "duration_ms": duration_ms,
+            },
+        )
 
         return ModelResponse(
             text=self._extract_response_text(response),
             provider_name="oci",
-            request_id=getattr(response, "request_id", None),
+            request_id=request_id,
         )
 
     @staticmethod
