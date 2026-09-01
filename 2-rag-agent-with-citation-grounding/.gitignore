@@ -1,0 +1,17 @@
+# Secrets and local runtime configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+oci_config.local*
+
+# Private source material and all generated RAG artifacts are ignored by data/.gitignore.
+data/*
+!data/.gitignore
+!data/raw_pages/
+!data/raw_pages/.gitkeep
+!data/chunks/
+!data/chunks/.gitkeep

@@ -1,0 +1,8 @@
+# All local data is private by default: source pages, chunks, embeddings,
+# SQLite databases, page lists, and evaluation reports stay on the machine.
+*
+!.gitignore
+!raw_pages/
+!raw_pages/.gitkeep
+!chunks/
+!chunks/.gitkeep
