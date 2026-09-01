@@ -1,0 +1,158 @@
+# Single-node Oracle Database 23ai Free for the Confluence RAG learning project.
+#
+# Prerequisite: create the rag-oracle-credentials Secret in the `rag`
+# namespace before applying this manifest. See the commands below this file.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rag-oracle-vector-startup
+  namespace: rag
+data:
+  01-create-vector-schema.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # This script is run by the Oracle container after every database startup.
+    # The SQL is idempotent, so restarting the pod does not recreate the schema.
+    if [[ ! "${VECTOR_DB_PASSWORD:-}" =~ ^[A-Za-z0-9_]{8,128}$ ]]; then
+      echo "VECTOR_DB_PASSWORD must contain 8-128 letters, digits, or underscores."
+      exit 1
+    fi
+
+    sqlplus -s / as sysdba <<SQL
+    WHENEVER OSERROR EXIT 9
+    WHENEVER SQLERROR EXIT SQL.SQLCODE
+
+    ALTER SESSION SET CONTAINER=FREEPDB1;
+
+    DECLARE
+      tablespace_count PLS_INTEGER;
+      user_count PLS_INTEGER;
+    BEGIN
+      SELECT COUNT(*) INTO tablespace_count
+      FROM dba_tablespaces
+      WHERE tablespace_name = 'RAG_VECTOR_TBS';
+
+      IF tablespace_count = 0 THEN
+        EXECUTE IMMEDIATE q'[
+          CREATE BIGFILE TABLESPACE RAG_VECTOR_TBS
+          DATAFILE 'rag_vector_tbs.dbf'
+          SIZE 1G AUTOEXTEND ON NEXT 32M MAXSIZE UNLIMITED
+          EXTENT MANAGEMENT LOCAL SEGMENT SPACE MANAGEMENT AUTO
+        ]';
+      END IF;
+
+      SELECT COUNT(*) INTO user_count
+      FROM dba_users
+      WHERE username = 'VECTOR';
+
+      IF user_count = 0 THEN
+        EXECUTE IMMEDIATE
+          'CREATE USER vector IDENTIFIED BY ${VECTOR_DB_PASSWORD} ' ||
+          'DEFAULT TABLESPACE RAG_VECTOR_TBS QUOTA UNLIMITED ON RAG_VECTOR_TBS';
+      END IF;
+    END;
+    /
+
+    ALTER USER vector IDENTIFIED BY ${VECTOR_DB_PASSWORD}
+      DEFAULT TABLESPACE RAG_VECTOR_TBS
+      QUOTA UNLIMITED ON RAG_VECTOR_TBS;
+    GRANT DB_DEVELOPER_ROLE TO vector;
+    EXIT;
+    SQL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rag-oracle-23ai
+  namespace: rag
+spec:
+  type: NodePort
+  selector:
+    app: rag-oracle-23ai
+  ports:
+    - name: oracle-listener
+      port: 1521
+      targetPort: 1521
+      nodePort: 31521
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rag-oracle-23ai
+  namespace: rag
+spec:
+  serviceName: rag-oracle-23ai
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rag-oracle-23ai
+  template:
+    metadata:
+      labels:
+        app: rag-oracle-23ai
+    spec:
+      securityContext:
+        fsGroup: 54321
+      containers:
+        - name: oracle-23ai
+          image: container-registry.oracle.com/database/free:23.9.0.0-amd64
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: oracle-listener
+              containerPort: 1521
+          env:
+            - name: ORACLE_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: rag-oracle-credentials
+                  key: ORACLE_PWD
+            - name: VECTOR_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rag-oracle-credentials
+                  key: VECTOR_DB_PASSWORD
+            - name: INIT_SGA_SIZE
+              value: "2048"
+            - name: INIT_PGA_SIZE
+              value: "1024"
+          resources:
+            requests:
+              cpu: "1"
+              memory: "4Gi"
+            limits:
+              cpu: "2"
+              memory: "8Gi"
+          volumeMounts:
+            - name: oradata
+              mountPath: /opt/oracle/oradata
+            - name: vector-schema-startup
+              mountPath: /opt/oracle/scripts/startup
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 1521
+            initialDelaySeconds: 120
+            periodSeconds: 15
+            failureThreshold: 20
+          livenessProbe:
+            tcpSocket:
+              port: 1521
+            initialDelaySeconds: 240
+            periodSeconds: 30
+            failureThreshold: 10
+      volumes:
+        - name: vector-schema-startup
+          configMap:
+            name: rag-oracle-vector-startup
+            defaultMode: 0555
+  volumeClaimTemplates:
+    - metadata:
+        name: oradata
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 30Gi
