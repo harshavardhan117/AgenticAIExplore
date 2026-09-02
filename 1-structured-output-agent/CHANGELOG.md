@@ -1,13 +1,10 @@
 # Change List
 
-This project uses two learning versions:
+This project uses two learning versions. The current `master` branch contains both the functional baseline and the V2 refactoring work.
 
-- **V1** is the functional baseline on the `master` branch.
-- **V2** is the refactored/optimized learning version on the `optimization` branch.
+## V2 — Refined architecture
 
-## V2 — Optimization branch
-
-Status: active learning branch.
+Status: merged into `master`.
 
 ### Design improvements
 
