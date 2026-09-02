@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from source_processing.chunking.data_models import ChunkType
 
 
-ScoreKind = Literal["similarity", "distance"]
+ScoreKind = Literal["similarity", "distance", "bm25", "rrf"]
 
 
 class UpsertResult(BaseModel):

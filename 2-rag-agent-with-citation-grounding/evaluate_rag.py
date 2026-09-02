@@ -8,7 +8,7 @@ from pathlib import Path
 
 from evaluation.answer_relevancy import AnswerRelevancyJudge
 from evaluation.citation_correctness import CitationCorrectnessJudge
-from evaluation.runner import DenseRagEvaluator, build_rag_service, load_cases, summarize
+from evaluation.runner import RagEvaluator, build_rag_service, load_cases, summarize
 from rag.oci_chat import OciChatClient
 
 
@@ -22,6 +22,11 @@ def parse_arguments() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--backend", choices=("oracle", "opensearch"), default="oracle")
+    parser.add_argument(
+        "--retrieval-strategy",
+        choices=("dense", "keyword", "hybrid_rrf"),
+        default="dense",
+    )
     parser.add_argument("--limit", type=int, default=5)
     parser.add_argument("--dataset-path", type=Path, default=DEFAULT_DATASET_PATH)
     parser.add_argument("--database-path", type=Path, default=DEFAULT_DATABASE_PATH)
@@ -34,11 +39,12 @@ def main() -> int:
 
     arguments = parse_arguments()
     chat_client = OciChatClient()
-    evaluator = DenseRagEvaluator(
+    evaluator = RagEvaluator(
         service=build_rag_service(arguments.database_path, chat_client),
         relevancy_judge=AnswerRelevancyJudge(chat_client),
         citation_judge=CitationCorrectnessJudge(chat_client),
         backend=arguments.backend,
+        retrieval_strategy=arguments.retrieval_strategy,
         limit=arguments.limit,
     )
     results = evaluator.evaluate_all(load_cases(arguments.dataset_path))
@@ -54,14 +60,18 @@ def main() -> int:
     )
 
     output_path = arguments.output_path or (
-        PROJECT_ROOT / "data" / "evaluation" / "runs" / f"dense_vector_{arguments.backend}_all_metrics.json"
+        PROJECT_ROOT
+        / "data"
+        / "evaluation"
+        / "runs"
+        / f"{arguments.retrieval_strategy}_{arguments.backend}_all_metrics.json"
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         json.dumps(
             {
                 "backend": arguments.backend,
-                "strategy": "dense_vector",
+                "strategy": arguments.retrieval_strategy,
                 "limit": arguments.limit,
                 "metrics": [
                     "hit_at_k",

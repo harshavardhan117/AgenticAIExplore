@@ -55,6 +55,13 @@ class SqliteContentCatalog:
                 FOREIGN KEY (chunk_id) REFERENCES chunks(chunk_id) ON DELETE CASCADE
             );
 
+            CREATE VIRTUAL TABLE IF NOT EXISTS chunk_fts USING fts5(
+                chunk_id UNINDEXED,
+                page_id UNINDEXED,
+                heading_path,
+                content
+            );
+
             CREATE INDEX IF NOT EXISTS idx_chunks_page_id ON chunks(page_id);
             CREATE INDEX IF NOT EXISTS idx_embeddings_model ON embeddings(model);
             """
@@ -121,6 +128,15 @@ class SqliteContentCatalog:
                     embedded_json_path = excluded.embedded_json_path
                 """,
                 [embedding.model_dump() for embedding in embeddings],
+            )
+            # The FTS table is derived from chunks. Rebuild it in the same
+            # transaction so keyword retrieval always reflects catalog state.
+            connection.execute("DELETE FROM chunk_fts")
+            connection.execute(
+                """
+                INSERT INTO chunk_fts (chunk_id, page_id, heading_path, content)
+                SELECT chunk_id, page_id, heading_path, content FROM chunks
+                """
             )
 
     def close(self) -> None:

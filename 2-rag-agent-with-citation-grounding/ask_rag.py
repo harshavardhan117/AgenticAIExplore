@@ -22,6 +22,11 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("question", help="Natural-language Confluence question to answer.")
     parser.add_argument("--backend", choices=("oracle", "opensearch"), default="oracle")
+    parser.add_argument(
+        "--retrieval-strategy",
+        choices=("dense", "keyword", "hybrid_rrf"),
+        default="dense",
+    )
     parser.add_argument("--limit", type=int, default=5)
     parser.add_argument("--database-path", type=Path, default=DEFAULT_DATABASE_PATH)
     return parser.parse_args()
@@ -43,6 +48,7 @@ def main() -> int:
         RAGRequest(
             question=arguments.question,
             backend_name=arguments.backend,
+            retrieval_strategy=arguments.retrieval_strategy,
             limit=arguments.limit,
         )
     )

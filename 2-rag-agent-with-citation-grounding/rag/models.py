@@ -10,6 +10,7 @@ class RAGRequest(BaseModel):
 
     question: str = Field(min_length=1)
     backend_name: str = Field(min_length=1)
+    retrieval_strategy: str = Field(default="dense", min_length=1)
     limit: int = Field(default=5, ge=1, le=100)
 
 
@@ -57,6 +58,7 @@ class RAGResponse(BaseModel):
 
     question: str = Field(min_length=1)
     backend_name: str = Field(min_length=1)
+    retrieval_strategy: str = Field(min_length=1)
     answer: str = Field(min_length=1)
     answer_model: str = Field(min_length=1)
     abstained: bool = False
