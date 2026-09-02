@@ -61,7 +61,7 @@ main.py         Simple public entry point: run(request)
 Run commands from this folder:
 
 ```powershell
-cd "C:\Users\Harshavardhan Reddy\Downloads\Agentic AI Explore\AgenticAIExplore\1-structured-output-agent"
+cd "<path-to-cloned-repository>\1-structured-output-agent"
 ```
 
 ```bash
