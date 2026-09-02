@@ -3,6 +3,7 @@
 import os
 
 import oci
+from dotenv import load_dotenv
 
 from rag.oci_chat_formats import OciChatFormat, builtin_chat_formats
 
@@ -11,6 +12,8 @@ class OciChatClient:
     """Read OCI configuration and send one prompt using its required API format."""
 
     def __init__(self) -> None:
+        # Shell exports remain authoritative over values in a local .env file.
+        load_dotenv()
         config_file_path = os.getenv("OCI_CONFIG_FILE_PATH", "~/.oci/config")
         profile_name = os.getenv("OCI_PROFILE_NAME", "DEFAULT")
         self._compartment_id = self._required("OCI_COMPARTMENT_ID")

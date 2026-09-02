@@ -13,10 +13,22 @@ The ingestion module fetches specific Confluence pages using the Confluence Data
 
 Optional pacing controls: `CONFLUENCE_REQUEST_DELAY_SECONDS`, `CONFLUENCE_MAX_RETRIES`, and `CONFLUENCE_INITIAL_BACKOFF_SECONDS`.
 
+This reusable module loads a local ignored `.env` file automatically. Shell exports override `.env`, which is useful for CI and temporary runs. Copy `../../.env.example` to the project root as `.env`; never commit the resulting file.
+
+This reusable module loads a local ignored `.env` file automatically. Shell exports override `.env`, which is useful for CI and temporary runs. Copy `../../.env.example` to the project root as `.env`; never commit the resulting file.
+
 ## Run it
 
 ```powershell
 python .\collect_confluence_pages.py
+```
+
+```bash
+python collect_confluence_pages.py
+```
+
+```bash
+python collect_confluence_pages.py
 ```
 
 By default, an existing snapshot is skipped when Confluence reports that the page has not changed since it was fetched. Use `--overwrite` only when you intentionally need a full refresh.
@@ -28,6 +40,10 @@ python .\collect_confluence_pages.py --page-id-file .\data\page_ids.txt --output
 ## Discovery helper
 
 `discover_confluence_pages.py` walks child pages from a supplied parent page and produces a local page-ID list/tree. Use it to build a reviewable scope, then copy only approved page IDs to `data/page_ids.txt` before ingestion.
+
+It additionally reads `CONFLUENCE_PAGE_ID`, `CONFLUENCE_PLATFORM`, `CONFLUENCE_MAX_DEPTH`, `CONFLUENCE_EXCLUDED_PAGE_IDS`, and `CONFLUENCE_OUTPUT_PAGE_ID_FILE`. See the root [`.env.example`](../../.env.example) for safe placeholders.
+
+It additionally reads `CONFLUENCE_PAGE_ID`, `CONFLUENCE_PLATFORM`, `CONFLUENCE_MAX_DEPTH`, `CONFLUENCE_EXCLUDED_PAGE_IDS`, and `CONFLUENCE_OUTPUT_PAGE_ID_FILE`. See the root [`.env.example`](../../.env.example) for safe placeholders.
 
 ## Safety
 

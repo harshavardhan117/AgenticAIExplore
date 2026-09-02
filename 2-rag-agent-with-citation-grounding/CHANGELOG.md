@@ -18,7 +18,9 @@ This project follows a lightweight, learning-focused changelog. Versions describ
 - Added strategy-based dense-vector, SQLite FTS5 keyword/BM25, and hybrid Reciprocal Rank Fusion retrieval.
 - Added a shared evaluation switch so every retrieval strategy can be measured with Oracle or OpenSearch.
 - Added a local FastAPI server with `/health` and `/api/ask` endpoints.
-- Added a small browser UI that selects backend and retrieval strategy and renders grounded citations.
+- Added a responsive local browser UI that selects backend and retrieval strategy and renders grounded citations.
+- Added ignored `.env` support with a placeholder-only template; explicit shell exports take precedence for CI and one-off runs.
+- Expanded cross-platform setup and module-level configuration documentation for Windows PowerShell and Linux/macOS Bash.
 
 ## Future ideas
 

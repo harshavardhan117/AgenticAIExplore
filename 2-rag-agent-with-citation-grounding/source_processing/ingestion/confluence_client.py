@@ -10,6 +10,8 @@ from base64 import b64encode
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from dotenv import load_dotenv
+
 
 @dataclass(frozen=True)
 class ConfluenceConfig:
@@ -25,7 +27,13 @@ class ConfluenceConfig:
 
     @classmethod
     def from_environment(cls) -> "ConfluenceConfig":
-        """Load required Confluence settings without persisting the token."""
+        """Load Confluence settings without persisting the token.
+
+        A local .env is supported for development. Existing process variables
+        take precedence, which keeps CI and shell exports authoritative.
+        """
+
+        load_dotenv()
         return cls(
             base_url=cls._required("CONFLUENCE_BASE_URL").rstrip("/"),
             token=cls._required("CONFLUENCE_TOKEN"),

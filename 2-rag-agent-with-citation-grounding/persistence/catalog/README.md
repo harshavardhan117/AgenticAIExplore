@@ -2,6 +2,10 @@
 
 The SQLite catalog is the local source of truth for metadata and citations. It is not a vector database.
 
+It is reusable and has no environment-variable requirements; the driver uses local paths under `data/`.
+
+It is reusable and has no environment-variable requirements; the driver uses local paths under `data/`.
+
 ## Schema
 
 - `pages`: page ID, title, URL, last-modified time, and version.
@@ -15,6 +19,14 @@ The relationships are normalized: one page has many chunks; one chunk has one cu
 
 ```powershell
 python .\sync_sqlite_catalog.py
+```
+
+```bash
+python sync_sqlite_catalog.py
+```
+
+```bash
+python sync_sqlite_catalog.py
 ```
 
 It reads local raw pages, chunks, and embedded chunks, then creates or refreshes `data/ats_rag.db`. The database is ignored by Git because it contains private page metadata and content references.

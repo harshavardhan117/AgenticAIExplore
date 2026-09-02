@@ -2,6 +2,7 @@
 
 import os
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 
@@ -30,6 +31,7 @@ class OpenSearchVectorStoreConfig(BaseModel):
     def from_environment(cls) -> "OpenSearchVectorStoreConfig":
         """Create configuration from the OPENSEARCH_* environment variables."""
 
+        load_dotenv()
         return cls(
             endpoint=cls._required("OPENSEARCH_URL").rstrip("/"),
             index_name=os.getenv("OPENSEARCH_INDEX_NAME", "rag_embedded_chunks_v1"),

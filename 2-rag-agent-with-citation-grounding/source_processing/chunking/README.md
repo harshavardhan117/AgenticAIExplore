@@ -2,6 +2,10 @@
 
 This module converts a raw Confluence page snapshot into retrieval-sized records while preserving citation metadata and order.
 
+It is reusable for any storage-format Confluence snapshot produced by the ingestion module. It has no environment-variable requirements.
+
+It is reusable for any storage-format Confluence snapshot produced by the ingestion module. It has no environment-variable requirements.
+
 ## Flow
 
 1. `html_parser.py` reads Confluence storage-format HTML and emits ordered `ParsedBlock` objects such as headings, paragraphs, tables, and code blocks.
@@ -21,6 +25,14 @@ Factories and interfaces make it possible to add another strategy without changi
 
 ```powershell
 python .\chunk_all_pages.py
+```
+
+```bash
+python chunk_all_pages.py
+```
+
+```bash
+python chunk_all_pages.py
 ```
 
 The command reads `data/raw_pages/` and writes `data/chunks/section_as_chunk_v1/` by default. Both locations are private local artifacts.

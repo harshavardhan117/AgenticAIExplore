@@ -2,6 +2,7 @@
 
 import os
 
+from dotenv import load_dotenv
 from pydantic import BaseModel
 
 
@@ -17,6 +18,7 @@ class OciEmbeddingConfig(BaseModel):
     @classmethod
     def from_environment(cls) -> "OciEmbeddingConfig":
         """Create OCI configuration from environment variables."""
+        load_dotenv()
         return cls(
             config_file_path=os.getenv("OCI_CONFIG_FILE_PATH", "~/.oci/config"),
             profile_name=os.getenv("OCI_PROFILE_NAME", "DEFAULT"),

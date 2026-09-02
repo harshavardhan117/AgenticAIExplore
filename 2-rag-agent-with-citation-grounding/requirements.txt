@@ -4,3 +4,4 @@ oracledb>=2.0
 opensearch-py>=2.0
 fastapi>=0.115
 uvicorn[standard]>=0.30
+python-dotenv>=1.0
