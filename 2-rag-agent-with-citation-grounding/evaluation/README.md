@@ -30,12 +30,12 @@ Create `data/evaluation/my_eval_set.json` locally. It must not be committed beca
 ## Run all enabled metrics
 
 ```powershell
-python .\evaluate_rag.py --backend oracle --limit 5 `
+python .\evaluate_rag.py --backend oracle --retrieval-strategy dense --limit 5 `
   --dataset-path .\data\evaluation\my_eval_set.json `
   --output-path .\data\evaluation\runs\oracle_metrics.json
 ```
 
-Repeat with `--backend opensearch` to compare the two vector stores under the same dataset, model configuration, and top-K limit.
+Choose one of `--retrieval-strategy dense`, `keyword`, or `hybrid_rrf`. Repeat with `--backend opensearch` to compare the two vector stores under the same dataset, model configuration, strategy, and top-K limit. Keyword retrieval reads SQLite FTS5 and is therefore backend-independent; hybrid uses the chosen vector backend for dense candidates and SQLite for keyword candidates.
 
 ## Metrics
 

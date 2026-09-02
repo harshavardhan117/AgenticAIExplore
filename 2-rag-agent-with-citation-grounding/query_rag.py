@@ -30,6 +30,12 @@ def parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument("--limit", type=int, default=5, help="Maximum chunks to return (default: 5).")
     parser.add_argument(
+        "--retrieval-strategy",
+        choices=("dense", "keyword", "hybrid_rrf"),
+        default="dense",
+        help="Retrieval algorithm (default: dense).",
+    )
+    parser.add_argument(
         "--database-path",
         type=Path,
         default=DEFAULT_DATABASE_PATH,
@@ -67,14 +73,21 @@ def main() -> int:
         RAGRequest(
             question=arguments.question,
             backend_name=arguments.backend,
+            retrieval_strategy=arguments.retrieval_strategy,
             limit=arguments.limit,
         )
     )
     print(f"Question: {arguments.question}")
     print(f"Backend: {arguments.backend}")
+    print(f"Retrieval strategy: {arguments.retrieval_strategy}")
     print(f"Results returned: {len(response)}")
     for result in response:
-        score_label = "cosine distance" if result.score_kind == "distance" else "k-NN score"
+        score_label = {
+            "distance": "cosine distance",
+            "similarity": "k-NN score",
+            "bm25": "BM25 score",
+            "rrf": "RRF score",
+        }[result.score_kind]
         print(f"\nRank {result.rank} | {score_label}: {result.score:.6f}")
         print(f"  Chunk ID: {result.chunk_id}")
         print(f"  Page ID: {result.page_id}")

@@ -31,8 +31,9 @@ Supported storage is split by responsibility:
 | [`source_processing/`](source_processing/README.md) | Collect, parse, and chunk Confluence pages. |
 | [`embedding_pipeline/`](embedding_pipeline/README.md) | Turn chunks into provider-neutral embedded records. |
 | [`persistence/`](persistence/README.md) | Maintain SQLite metadata and upload/search vectors. |
-| [`rag/`](rag/README.md) | Retrieve evidence, build a grounded prompt, and generate cited answers. |
+| [`rag/`](rag/README.md) | Select dense, keyword, or hybrid retrieval; build a grounded prompt; generate cited answers. |
 | [`evaluation/`](evaluation/README.md) | Measure retrieval, answer, citation, and abstention behavior. |
+| [`api_server.py`](api_server.py) and [`web/`](web/index.html) | Local FastAPI endpoint and browser UI. |
 | [`deploy/`](deploy/README.md) | Optional Kubernetes manifest for an Oracle 23ai learning deployment. |
 | [`data/`](data/.gitignore) | Local-only source and generated artifacts; never committed. |
 
@@ -78,21 +79,34 @@ python .\query_rag.py "How do I configure this feature?" --backend oracle
 python .\ask_rag.py "How do I configure this feature?" --backend oracle
 ```
 
-Use `--backend opensearch` after uploading to OpenSearch. See the module READMEs for configuration and troubleshooting details.
+Use `--backend opensearch` after uploading to OpenSearch. Add `--retrieval-strategy keyword` for SQLite FTS5/BM25, or `--retrieval-strategy hybrid_rrf` to combine dense and keyword rankings. See the module READMEs for configuration and troubleshooting details.
 
 ## Evaluation
 
 Create a private JSON evaluation dataset with answerable questions, expected source URLs, and unsupported questions marked `should_abstain: true`. Then run:
 
 ```powershell
-python .\evaluate_rag.py --backend oracle --limit 5 `
+python .\evaluate_rag.py --backend oracle --retrieval-strategy dense --limit 5 `
   --output-path .\data\evaluation\runs\oracle_metrics.json
 
-python .\evaluate_rag.py --backend opensearch --limit 5 `
+python .\evaluate_rag.py --backend opensearch --retrieval-strategy hybrid_rrf --limit 5 `
   --output-path .\data\evaluation\runs\opensearch_metrics.json
 ```
 
 The report contains Hit@K, MRR@K, answer relevancy, citation correctness, and abstention accuracy. The dataset and reports remain local by design.
+
+## Local API and UI
+
+After setting the same environment variables used by `ask_rag.py`, install the updated dependencies and start the local server:
+
+```powershell
+pip install -r requirements.txt
+python -m uvicorn api_server:app --reload
+```
+
+Open `http://127.0.0.1:8000` for the UI. The API is also available at `POST /api/ask`; interactive OpenAPI documentation is available at `/docs`.
+
+This v2 server is intentionally local and unauthenticated. Do not expose it publicly until authentication, access control, HTTPS, and operational safeguards are added.
 
 ## Security and data boundaries
 

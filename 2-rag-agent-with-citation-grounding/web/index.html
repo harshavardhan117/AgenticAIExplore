@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Confluence RAG</title>
+    <style>
+      body { background: #f6f8fb; color: #1b2638; font: 16px/1.5 system-ui, sans-serif; margin: 0; }
+      main { background: #fff; border-radius: 12px; box-shadow: 0 4px 20px #1b26381a; margin: 48px auto; max-width: 820px; padding: 32px; }
+      h1 { margin-top: 0; } form { display: grid; gap: 16px; } textarea { min-height: 92px; resize: vertical; }
+      textarea, select, button { border: 1px solid #b8c3d1; border-radius: 7px; font: inherit; padding: 10px; }
+      .options { display: flex; flex-wrap: wrap; gap: 16px; } .options label { display: grid; gap: 4px; }
+      button { background: #1565c0; color: #fff; cursor: pointer; font-weight: 600; width: max-content; }
+      button:disabled { opacity: .65; cursor: wait; } #result { margin-top: 28px; } pre { background: #f1f4f8; border-radius: 7px; padding: 16px; white-space: pre-wrap; }
+      ul { padding-left: 20px; } .meta { color: #55657a; font-size: .9rem; } .error { color: #b3261e; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Confluence RAG</h1>
+      <p>Ask a question and review the evidence-backed answer with its source pages.</p>
+      <form id="question-form">
+        <label>Question<textarea id="question" required maxlength="4000" placeholder="How do I configure this feature?"></textarea></label>
+        <div class="options">
+          <label>Vector backend<select id="backend"><option value="oracle">Oracle 23ai</option><option value="opensearch">OpenSearch</option></select></label>
+          <label>Retrieval strategy<select id="strategy"><option value="dense">Dense vector</option><option value="keyword">Keyword / BM25</option><option value="hybrid_rrf">Hybrid RRF</option></select></label>
+          <label>Top results<select id="limit"><option>3</option><option selected>5</option><option>10</option></select></label>
+        </div>
+        <button id="submit" type="submit">Ask</button>
+      </form>
+      <section id="result" aria-live="polite"></section>
+    </main>
+    <script>
+      const form = document.querySelector('#question-form');
+      const result = document.querySelector('#result');
+      const submit = document.querySelector('#submit');
+      function element(name, text) { const node = document.createElement(name); if (text) node.textContent = text; return node; }
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault(); result.replaceChildren(); submit.disabled = true; submit.textContent = 'Searching…';
+        try {
+          const response = await fetch('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: document.querySelector('#question').value, backend_name: document.querySelector('#backend').value, retrieval_strategy: document.querySelector('#strategy').value, limit: Number(document.querySelector('#limit').value) }) });
+          const body = await response.json(); if (!response.ok) throw new Error(body.detail || 'Request failed.');
+          result.append(element('h2', body.abstained ? 'No reliable answer' : 'Answer'));
+          result.append(element('pre', body.answer));
+          result.append(element('p', `Backend: ${body.backend_name} · Strategy: ${body.retrieval_strategy} · Sources: ${body.citations.length}`)).className = 'meta';
+          if (body.citations.length) { const list = element('ul'); body.citations.forEach((citation) => { const item = element('li'); const link = element('a', citation.page_title); link.href = citation.page_url; link.target = '_blank'; link.rel = 'noreferrer'; item.append(link); list.append(item); }); result.append(element('h3', 'Confluence sources'), list); }
+        } catch (error) { const message = element('p', error.message); message.className = 'error'; result.append(message); }
+        finally { submit.disabled = false; submit.textContent = 'Ask'; }
+      });
+    </script>
+  </body>
+</html>

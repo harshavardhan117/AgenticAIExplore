@@ -3,16 +3,16 @@
 from __future__ import annotations
 
 import re
-import sqlite3
 import os
 from pathlib import Path
 
-from embedding_pipeline.embeddings.data_models import EmbeddingRequest
 from embedding_pipeline.embeddings.interfaces import EmbeddingProvider
 from persistence.vector_stores.factory import VectorStoreFactory
 from rag.models import Citation, CitedSource, RAGRequest, RAGResponse, RetrievedChunk
 from rag.oci_chat import OciChatClient
 from rag.prompt_builder import PromptBuilder
+from rag.retrieval.catalog_reader import CatalogReader
+from rag.retrieval.factory import RetrievalStrategyFactory, build_default_retrieval_strategy_factory
 
 
 class RAGService:
@@ -25,6 +25,7 @@ class RAGService:
         catalog_path: Path,
         chat_client: OciChatClient | None = None,
         prompt_builder: PromptBuilder | None = None,
+        retrieval_strategy_factory: RetrievalStrategyFactory | None = None,
     ) -> None:
         self._embedding_provider = embedding_provider
         self._vector_store_factory = vector_store_factory
@@ -35,37 +36,16 @@ class RAGService:
         # and independently configurable instead of pretending their scores match.
         self._max_cosine_distance = float(os.getenv("RAG_MAX_COSINE_DISTANCE", "0.45"))
         self._min_knn_score = float(os.getenv("RAG_MIN_KNN_SCORE", "0.75"))
+        self._retrieval_strategy_factory = retrieval_strategy_factory or build_default_retrieval_strategy_factory(
+            embedding_provider,
+            vector_store_factory,
+            CatalogReader(catalog_path),
+        )
 
     def retrieve(self, request: RAGRequest) -> list[RetrievedChunk]:
-        """Create one query vector, search the chosen backend, and attach citations."""
+        """Select and run dense, keyword, or hybrid retrieval."""
 
-        embedding = self._embedding_provider.embed(
-            EmbeddingRequest(text=request.question, input_type="SEARCH_QUERY")
-        )
-        vector_store = self._vector_store_factory.create(request.backend_name)
-        try:
-            search_results = vector_store.search(embedding.embedding, limit=request.limit)
-        finally:
-            vector_store.close()
-
-        pages = self._find_pages([result.page_id for result in search_results])
-        return [
-            RetrievedChunk(
-                rank=result.rank,
-                score=result.score,
-                score_kind=result.score_kind,
-                chunk_id=result.chunk_id,
-                page_id=result.page_id,
-                heading_path=result.heading_path,
-                content=result.content,
-                citation=Citation(
-                    page_id=result.page_id,
-                    page_title=pages.get(result.page_id, (result.page_title, result.page_url))[0],
-                    page_url=pages.get(result.page_id, (result.page_title, result.page_url))[1],
-                ),
-            )
-            for result in search_results
-        ]
+        return self._retrieval_strategy_factory.create(request.retrieval_strategy).retrieve(request)
 
     def ask(self, request: RAGRequest) -> RAGResponse:
         """Retrieve evidence, call OCI chat, and return answer plus source pages."""
@@ -76,6 +56,7 @@ class RAGService:
             return RAGResponse(
                 question=request.question,
                 backend_name=request.backend_name,
+                retrieval_strategy=request.retrieval_strategy,
                 answer="I cannot answer reliably from the retrieved Confluence documentation.",
                 answer_model="not_called",
                 abstained=True,
@@ -95,6 +76,7 @@ class RAGService:
         return RAGResponse(
             question=request.question,
             backend_name=request.backend_name,
+            retrieval_strategy=request.retrieval_strategy,
             answer=answer,
             answer_model=self._chat_client.model_id,
             abstained=False,
@@ -153,21 +135,3 @@ class RAGService:
         valid_numbers = {result.rank for result in results}
         source_numbers = {int(value) for value in re.findall(r"\[Source\s+(\d+)\]", answer)}
         return sorted(source_numbers - valid_numbers)
-
-    def _find_pages(self, page_ids: list[str]) -> dict[str, tuple[str, str]]:
-        """Read canonical titles and URLs from SQLite without changing catalog data."""
-
-        if not self._catalog_path.is_file():
-            raise FileNotFoundError(
-                f"SQLite catalog was not found: {self._catalog_path}. Run sync_sqlite_catalog.py first."
-            )
-        unique_ids = list(dict.fromkeys(page_ids))
-        if not unique_ids:
-            return {}
-        placeholders = ", ".join("?" for _ in unique_ids)
-        with sqlite3.connect(f"{self._catalog_path.as_uri()}?mode=ro", uri=True) as connection:
-            rows = connection.execute(
-                f"SELECT page_id, title, page_url FROM pages WHERE page_id IN ({placeholders})",
-                unique_ids,
-            ).fetchall()
-        return {page_id: (title, page_url) for page_id, title, page_url in rows}

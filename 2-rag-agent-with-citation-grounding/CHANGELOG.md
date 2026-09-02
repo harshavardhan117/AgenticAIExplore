@@ -13,8 +13,14 @@ This project follows a lightweight, learning-focused changelog. Versions describ
 - Added evaluation for Hit@K, MRR@K, answer relevancy, citation correctness, and abstention behavior.
 - Added data and secret exclusion rules so local Confluence content, vectors, databases, reports, and credentials are not committed.
 
-## v2 — Planned
+## v2 — Retrieval strategies and local API/UI
 
-- Add FastAPI endpoints for retrieval and grounded question answering.
-- Add a small browser UI for asking questions and viewing citations.
-- Add configuration validation, backend health endpoints, and more retrieval strategies such as hybrid search and reranking.
+- Added strategy-based dense-vector, SQLite FTS5 keyword/BM25, and hybrid Reciprocal Rank Fusion retrieval.
+- Added a shared evaluation switch so every retrieval strategy can be measured with Oracle or OpenSearch.
+- Added a local FastAPI server with `/health` and `/api/ask` endpoints.
+- Added a small browser UI that selects backend and retrieval strategy and renders grounded citations.
+
+## Future ideas
+
+- Add backend health checks, reranking, and native backend-specific hybrid retrieval.
+- Add authentication and deployment hardening before exposing the API beyond a trusted environment.

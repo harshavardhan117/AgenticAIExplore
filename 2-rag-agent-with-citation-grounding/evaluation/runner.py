@@ -42,8 +42,8 @@ def build_rag_service(database_path: Path, chat_client: OciChatClient) -> RAGSer
     )
 
 
-class DenseRagEvaluator:
-    """Run every currently enabled metric for one dense-vector RAG configuration."""
+class RagEvaluator:
+    """Run every enabled metric for one backend and retrieval-strategy configuration."""
 
     def __init__(
         self,
@@ -51,19 +51,26 @@ class DenseRagEvaluator:
         relevancy_judge: AnswerRelevancyJudge,
         citation_judge: CitationCorrectnessJudge,
         backend: str,
+        retrieval_strategy: str,
         limit: int,
     ) -> None:
         self._service = service
         self._relevancy_judge = relevancy_judge
         self._citation_judge = citation_judge
         self._backend = backend
+        self._retrieval_strategy = retrieval_strategy
         self._limit = limit
 
     def evaluate_case(self, case: EvaluationCase) -> EvaluationResult:
         """Run retrieval, answer, citation, and abstention checks for one case."""
 
         response = self._service.ask(
-            RAGRequest(question=case.question, backend_name=self._backend, limit=self._limit)
+            RAGRequest(
+                question=case.question,
+                backend_name=self._backend,
+                retrieval_strategy=self._retrieval_strategy,
+                limit=self._limit,
+            )
         )
         retrieved_urls = list(dict.fromkeys(chunk.citation.page_url for chunk in response.results))
 
