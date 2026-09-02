@@ -233,4 +233,4 @@ This server is intentionally local and unauthenticated. Do not expose it publicl
 - `data/` is ignored by default. Treat content collected from Confluence as private, even when a page appears harmless.
 - Review staged files before every commit with `git diff --cached`.
 
-See [CHANGELOG.md](CHANGELOG.md) for v1 scope and planned v2 FastAPI/UI work.
+See [CHANGELOG.md](CHANGELOG.md) for the completed v1 and v2 milestones and the scoped v3 ideas.
