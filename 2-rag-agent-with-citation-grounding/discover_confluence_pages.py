@@ -16,6 +16,12 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from dotenv import load_dotenv
+
+# Load a local ignored .env before this script reads its module-level settings.
+# Existing shell variables still take precedence.
+load_dotenv()
+
 # Values can be supplied as PowerShell environment variables instead of being
 # written in this file: CONFLUENCE_BASE_URL, CONFLUENCE_PAGE_ID, and
 # CONFLUENCE_TOKEN.

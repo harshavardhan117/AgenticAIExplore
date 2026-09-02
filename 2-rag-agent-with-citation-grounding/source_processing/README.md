@@ -2,6 +2,10 @@
 
 This layer turns selected Confluence pages into stable, local RAG artifacts. It does not call an embedding model or a vector store.
 
+It is reusable with any Confluence page collection: provide an approved local list of page IDs and your own access configuration. Chunking itself needs no environment variables.
+
+It is reusable with any Confluence page collection: provide an approved local list of page IDs and your own access configuration. Chunking itself needs no environment variables.
+
 ```text
 page_ids.txt -> ingestion -> raw_pages/<page-id>.json -> chunking -> chunks/<strategy>/<page-id>.json
 ```
@@ -12,3 +16,7 @@ page_ids.txt -> ingestion -> raw_pages/<page-id>.json -> chunking -> chunks/<str
 - [`chunking/`](chunking/README.md): parses Confluence storage HTML and turns it into chunks with page and section metadata.
 
 All outputs are written under `data/` and are intentionally ignored by Git. This keeps private source content out of the repository.
+
+For ingestion variables, `.env` support, and Windows/Linux commands, see [`ingestion/README.md`](ingestion/README.md).
+
+For ingestion variables, `.env` support, and Windows/Linux commands, see [`ingestion/README.md`](ingestion/README.md).

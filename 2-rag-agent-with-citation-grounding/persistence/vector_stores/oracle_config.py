@@ -2,6 +2,7 @@
 
 import os
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
@@ -30,6 +31,7 @@ class OracleVectorStoreConfig(BaseModel):
     def from_environment(cls) -> "OracleVectorStoreConfig":
         """Create configuration from the ORACLE_VECTOR_* environment variables."""
 
+        load_dotenv()
         return cls(
             host=cls._required("ORACLE_VECTOR_HOST"),
             port=int(os.getenv("ORACLE_VECTOR_PORT", "8123")),

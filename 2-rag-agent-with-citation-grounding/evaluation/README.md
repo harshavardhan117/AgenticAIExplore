@@ -1,6 +1,6 @@
 # RAG evaluation
 
-This module evaluates a complete dense-vector RAG flow. It runs a query through embedding, retrieval, the grounded answer model, and evaluator logic, then writes a local JSON report.
+This reusable module evaluates a complete RAG flow. It runs a query through embedding, retrieval, the grounded answer model, and evaluator logic, then writes a local JSON report.
 
 ## Private dataset shape
 
@@ -36,6 +36,16 @@ python .\evaluate_rag.py --backend oracle --retrieval-strategy dense --limit 5 `
 ```
 
 Choose one of `--retrieval-strategy dense`, `keyword`, or `hybrid_rrf`. Repeat with `--backend opensearch` to compare the two vector stores under the same dataset, model configuration, strategy, and top-K limit. Keyword retrieval reads SQLite FTS5 and is therefore backend-independent; hybrid uses the chosen vector backend for dense candidates and SQLite for keyword candidates.
+
+The configuration is the same as the RAG runtime: OCI embedding and chat variables are required for all full evaluations; `dense` and `hybrid_rrf` also need the selected backend's variables; `keyword` needs the local SQLite catalog. The ignored root `.env` is loaded automatically, and shell exports override it.
+
+Linux / macOS Bash uses the same arguments without PowerShell's backtick continuation:
+
+```bash
+python evaluate_rag.py --backend oracle --retrieval-strategy dense --limit 5 \
+  --dataset-path data/evaluation/my_eval_set.json \
+  --output-path data/evaluation/runs/oracle_metrics.json
+```
 
 ## Metrics
 

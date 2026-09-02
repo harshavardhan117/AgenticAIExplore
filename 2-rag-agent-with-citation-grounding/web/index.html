@@ -3,49 +3,282 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Confluence RAG</title>
+    <meta name="description" content="A local, evidence-grounded Confluence RAG interface." />
+    <title>Confluence RAG | Grounded answers</title>
     <style>
-      body { background: #f6f8fb; color: #1b2638; font: 16px/1.5 system-ui, sans-serif; margin: 0; }
-      main { background: #fff; border-radius: 12px; box-shadow: 0 4px 20px #1b26381a; margin: 48px auto; max-width: 820px; padding: 32px; }
-      h1 { margin-top: 0; } form { display: grid; gap: 16px; } textarea { min-height: 92px; resize: vertical; }
-      textarea, select, button { border: 1px solid #b8c3d1; border-radius: 7px; font: inherit; padding: 10px; }
-      .options { display: flex; flex-wrap: wrap; gap: 16px; } .options label { display: grid; gap: 4px; }
-      button { background: #1565c0; color: #fff; cursor: pointer; font-weight: 600; width: max-content; }
-      button:disabled { opacity: .65; cursor: wait; } #result { margin-top: 28px; } pre { background: #f1f4f8; border-radius: 7px; padding: 16px; white-space: pre-wrap; }
-      ul { padding-left: 20px; } .meta { color: #55657a; font-size: .9rem; } .error { color: #b3261e; }
+      :root {
+        color-scheme: light;
+        --canvas: #f4f7fb;
+        --surface: #ffffff;
+        --surface-soft: #f8fafc;
+        --ink: #14213d;
+        --muted: #64748b;
+        --line: #dbe4f0;
+        --brand: #2457d6;
+        --brand-strong: #163fa5;
+        --brand-soft: #e9efff;
+        --success: #087b5b;
+        --danger: #b42318;
+        --danger-soft: #fff1f0;
+        --shadow: 0 20px 50px rgba(27, 47, 83, 0.1);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      body { background: var(--canvas); color: var(--ink); margin: 0; min-width: 320px; }
+      a { color: var(--brand-strong); }
+      button, textarea, select { font: inherit; }
+
+      .shell { margin: 0 auto; max-width: 1120px; padding: 32px 24px 56px; }
+      .masthead { align-items: center; display: flex; justify-content: space-between; margin-bottom: 28px; }
+      .brand { align-items: center; display: flex; gap: 12px; text-decoration: none; }
+      .brand-mark { align-items: center; background: linear-gradient(145deg, #356be6, #1c45b4); border-radius: 11px; box-shadow: 0 8px 20px rgba(36, 87, 214, 0.24); color: #fff; display: flex; font-size: 1.05rem; font-weight: 750; height: 38px; justify-content: center; letter-spacing: -0.04em; width: 38px; }
+      .brand-name { color: var(--ink); font-weight: 720; letter-spacing: -0.025em; }
+      .local-pill { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 0.82rem; font-weight: 650; padding: 7px 11px; }
+
+      .hero { background: radial-gradient(circle at 88% 5%, rgba(126, 167, 255, 0.32), transparent 33%), linear-gradient(130deg, #132e76, #1f51ca); border-radius: 22px; box-shadow: var(--shadow); color: #fff; overflow: hidden; padding: 48px; position: relative; }
+      .hero::after { border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 50%; content: ""; height: 250px; position: absolute; right: -112px; top: -145px; width: 250px; }
+      .eyebrow { color: #cbd9ff; font-size: 0.78rem; font-weight: 750; letter-spacing: 0.12em; margin: 0 0 12px; text-transform: uppercase; }
+      h1 { font-size: clamp(2rem, 4vw, 3.25rem); letter-spacing: -0.055em; line-height: 1.08; margin: 0; max-width: 680px; }
+      .hero-copy { color: #e0e9ff; font-size: 1.04rem; line-height: 1.65; margin: 18px 0 0; max-width: 630px; }
+      .hero-features { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+      .hero-feature { align-items: center; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 999px; color: #f8fbff; display: inline-flex; font-size: 0.83rem; font-weight: 600; gap: 7px; padding: 8px 12px; }
+      .hero-feature::before { background: #9dd8ff; border-radius: 50%; content: ""; height: 6px; width: 6px; }
+
+      .workspace { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 310px; margin-top: 24px; }
+      .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 8px 30px rgba(27, 47, 83, 0.045); }
+      .ask-panel { padding: 30px; }
+      .panel-title { font-size: 1.18rem; letter-spacing: -0.025em; margin: 0; }
+      .panel-intro { color: var(--muted); font-size: 0.94rem; line-height: 1.5; margin: 7px 0 24px; }
+      form { display: grid; gap: 20px; }
+      label { color: #34435d; display: grid; font-size: 0.85rem; font-weight: 700; gap: 8px; }
+      textarea, select { background: #fff; border: 1px solid #bdcadb; border-radius: 10px; color: var(--ink); outline: none; transition: border-color 160ms ease, box-shadow 160ms ease; }
+      textarea:focus, select:focus { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(36, 87, 214, 0.13); }
+      textarea { line-height: 1.55; min-height: 132px; padding: 13px 14px; resize: vertical; }
+      textarea::placeholder { color: #8b9ab0; }
+      select { cursor: pointer; min-height: 43px; padding: 0 34px 0 12px; }
+      .field-grid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .action-row { align-items: center; display: flex; gap: 16px; justify-content: space-between; margin-top: 2px; }
+      .hint { color: var(--muted); font-size: 0.82rem; line-height: 1.45; margin: 0; }
+      .ask-button { align-items: center; background: var(--brand); border: 1px solid var(--brand); border-radius: 10px; color: #fff; cursor: pointer; display: inline-flex; font-weight: 720; gap: 9px; justify-content: center; min-height: 44px; padding: 0 17px; transition: background 160ms ease, transform 160ms ease; }
+      .ask-button:hover { background: var(--brand-strong); transform: translateY(-1px); }
+      .ask-button:focus-visible { box-shadow: 0 0 0 4px rgba(36, 87, 214, 0.24); outline: 0; }
+      .ask-button:disabled { cursor: wait; opacity: 0.72; transform: none; }
+      .spinner { animation: spin 800ms linear infinite; border: 2px solid rgba(255, 255, 255, 0.42); border-radius: 50%; border-top-color: #fff; display: none; height: 15px; width: 15px; }
+      .is-loading .spinner { display: block; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .guide { align-self: start; padding: 24px; }
+      .guide h2 { font-size: 0.95rem; margin: 0; }
+      .guide-list { display: grid; gap: 18px; list-style: none; margin: 20px 0 0; padding: 0; }
+      .guide-item { display: grid; gap: 5px; grid-template-columns: 28px 1fr; }
+      .guide-number { align-items: center; background: var(--brand-soft); border-radius: 8px; color: var(--brand-strong); display: flex; font-size: 0.78rem; font-weight: 800; height: 28px; justify-content: center; }
+      .guide-copy strong { display: block; font-size: 0.87rem; }
+      .guide-copy span { color: var(--muted); display: block; font-size: 0.8rem; line-height: 1.45; margin-top: 3px; }
+      .privacy-note { border-top: 1px solid var(--line); color: var(--muted); font-size: 0.78rem; line-height: 1.5; margin: 22px 0 0; padding-top: 18px; }
+
+      #result { margin-top: 24px; }
+      .result-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 8px 30px rgba(27, 47, 83, 0.045); overflow: hidden; }
+      .result-header { align-items: flex-start; border-bottom: 1px solid var(--line); display: flex; gap: 16px; justify-content: space-between; padding: 24px 28px; }
+      .result-heading { display: flex; flex-direction: column; gap: 4px; }
+      .result-heading h2 { font-size: 1.18rem; letter-spacing: -0.025em; margin: 0; }
+      .result-heading p { color: var(--muted); font-size: 0.83rem; margin: 0; }
+      .status { background: #e9f8f3; border-radius: 999px; color: var(--success); font-size: 0.75rem; font-weight: 750; padding: 7px 10px; white-space: nowrap; }
+      .answer { font-family: inherit; font-size: 0.97rem; line-height: 1.7; margin: 0; padding: 26px 28px; white-space: pre-wrap; }
+      .source-section { background: var(--surface-soft); border-top: 1px solid var(--line); padding: 22px 28px 26px; }
+      .source-section h3 { font-size: 0.9rem; margin: 0 0 14px; }
+      .source-list { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
+      .source-list a { align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); display: flex; font-size: 0.9rem; font-weight: 620; justify-content: space-between; padding: 12px 13px; text-decoration: none; transition: border-color 160ms ease, box-shadow 160ms ease; }
+      .source-list a::after { color: var(--brand); content: "↗"; font-size: 1.05rem; margin-left: 12px; }
+      .source-list a:hover { border-color: #91aae8; box-shadow: 0 4px 12px rgba(36, 87, 214, 0.08); }
+      .error-card { background: var(--danger-soft); border: 1px solid #f4c6c2; border-radius: 14px; color: var(--danger); padding: 16px 18px; }
+      .empty-state { align-items: center; border: 1px dashed #bfcde0; border-radius: 18px; color: var(--muted); display: flex; font-size: 0.92rem; justify-content: center; min-height: 118px; padding: 22px; text-align: center; }
+
+      @media (max-width: 820px) {
+        .workspace { grid-template-columns: 1fr; }
+        .guide { display: none; }
+        .hero { padding: 38px 30px; }
+      }
+      @media (max-width: 600px) {
+        .shell { padding: 20px 15px 40px; }
+        .masthead { margin-bottom: 20px; }
+        .local-pill { display: none; }
+        .hero { border-radius: 16px; padding: 30px 24px; }
+        .ask-panel { padding: 23px 20px; }
+        .field-grid { grid-template-columns: 1fr; }
+        .action-row { align-items: stretch; flex-direction: column-reverse; }
+        .ask-button { width: 100%; }
+        .result-header, .answer, .source-section { padding-left: 20px; padding-right: 20px; }
+        .result-header { align-items: flex-start; flex-direction: column; }
+      }
     </style>
   </head>
   <body>
-    <main>
-      <h1>Confluence RAG</h1>
-      <p>Ask a question and review the evidence-backed answer with its source pages.</p>
-      <form id="question-form">
-        <label>Question<textarea id="question" required maxlength="4000" placeholder="How do I configure this feature?"></textarea></label>
-        <div class="options">
-          <label>Vector backend<select id="backend"><option value="oracle">Oracle 23ai</option><option value="opensearch">OpenSearch</option></select></label>
-          <label>Retrieval strategy<select id="strategy"><option value="dense">Dense vector</option><option value="keyword">Keyword / BM25</option><option value="hybrid_rrf">Hybrid RRF</option></select></label>
-          <label>Top results<select id="limit"><option>3</option><option selected>5</option><option>10</option></select></label>
+    <main class="shell">
+      <header class="masthead">
+        <a class="brand" href="/" aria-label="Confluence RAG home">
+          <span class="brand-mark" aria-hidden="true">R</span>
+          <span class="brand-name">Confluence RAG</span>
+        </a>
+        <span class="local-pill">Local workspace</span>
+      </header>
+
+      <section class="hero" aria-labelledby="page-title">
+        <p class="eyebrow">Evidence-grounded research</p>
+        <h1 id="page-title">Ask with confidence. Trace every answer.</h1>
+        <p class="hero-copy">Search your prepared Confluence knowledge base, get an answer grounded in retrieved evidence, and inspect the page links behind it.</p>
+        <div class="hero-features" aria-label="Capabilities">
+          <span class="hero-feature">Grounded generation</span>
+          <span class="hero-feature">Source citations</span>
+          <span class="hero-feature">Configurable retrieval</span>
         </div>
-        <button id="submit" type="submit">Ask</button>
-      </form>
-      <section id="result" aria-live="polite"></section>
+      </section>
+
+      <div class="workspace">
+        <section class="panel ask-panel" aria-labelledby="ask-heading">
+          <h2 class="panel-title" id="ask-heading">Ask a question</h2>
+          <p class="panel-intro">Choose a retrieval method, then submit a focused question about the pages you indexed.</p>
+          <form id="question-form">
+            <label for="question">Question
+              <textarea id="question" required maxlength="4000" placeholder="For example: How do I configure this feature?"></textarea>
+            </label>
+            <div class="field-grid">
+              <label for="backend">Vector backend
+                <select id="backend">
+                  <option value="oracle">Oracle 23ai</option>
+                  <option value="opensearch">OpenSearch</option>
+                </select>
+              </label>
+              <label for="strategy">Retrieval strategy
+                <select id="strategy">
+                  <option value="dense">Dense vector</option>
+                  <option value="keyword">Keyword / BM25</option>
+                  <option value="hybrid_rrf">Hybrid RRF</option>
+                </select>
+              </label>
+              <label for="limit">Top results
+                <select id="limit">
+                  <option value="3">3</option>
+                  <option value="5" selected>5</option>
+                  <option value="10">10</option>
+                </select>
+              </label>
+            </div>
+            <div class="action-row">
+              <p class="hint">Answers may abstain when the retrieved evidence is not reliable enough.</p>
+              <button class="ask-button" id="submit" type="submit">
+                <span class="spinner" aria-hidden="true"></span>
+                <span id="submit-label">Ask question</span>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="panel guide" aria-labelledby="guide-heading">
+          <h2 id="guide-heading">How it works</h2>
+          <ol class="guide-list">
+            <li class="guide-item"><span class="guide-number">1</span><span class="guide-copy"><strong>Retrieve</strong><span>Find relevant page sections using your selected strategy.</span></span></li>
+            <li class="guide-item"><span class="guide-number">2</span><span class="guide-copy"><strong>Ground</strong><span>Generate only from the selected evidence.</span></span></li>
+            <li class="guide-item"><span class="guide-number">3</span><span class="guide-copy"><strong>Verify</strong><span>Open the source pages to confirm the answer.</span></span></li>
+          </ol>
+          <p class="privacy-note">This local interface sends requests only to the services configured for your workspace.</p>
+        </aside>
+      </div>
+
+      <section id="result" aria-live="polite" aria-label="Answer results">
+        <div class="empty-state">Your grounded answer and its source pages will appear here.</div>
+      </section>
     </main>
     <script>
       const form = document.querySelector('#question-form');
       const result = document.querySelector('#result');
       const submit = document.querySelector('#submit');
-      function element(name, text) { const node = document.createElement(name); if (text) node.textContent = text; return node; }
+      const submitLabel = document.querySelector('#submit-label');
+
+      function element(name, text) {
+        const node = document.createElement(name);
+        if (text !== undefined) node.textContent = text;
+        return node;
+      }
+
+      function setLoading(isLoading) {
+        submit.disabled = isLoading;
+        submit.classList.toggle('is-loading', isLoading);
+        submitLabel.textContent = isLoading ? 'Searching evidence…' : 'Ask question';
+      }
+
+      function renderError(message) {
+        const card = element('div');
+        card.className = 'error-card';
+        card.setAttribute('role', 'alert');
+        card.append(element('strong', 'Request could not be completed.'));
+        card.append(element('p', message));
+        result.replaceChildren(card);
+      }
+
+      function renderResponse(body) {
+        const card = element('article');
+        card.className = 'result-card';
+
+        const header = element('header');
+        header.className = 'result-header';
+        const heading = element('div');
+        heading.className = 'result-heading';
+        heading.append(element('h2', body.abstained ? 'No reliable answer' : 'Grounded answer'));
+        heading.append(element('p', `${body.backend_name} · ${body.retrieval_strategy} · ${body.citations.length} source${body.citations.length === 1 ? '' : 's'}`));
+        header.append(heading);
+        const status = element('span', body.abstained ? 'Abstained' : 'Evidence found');
+        status.className = 'status';
+        header.append(status);
+        card.append(header);
+
+        const answer = element('p', body.answer);
+        answer.className = 'answer';
+        card.append(answer);
+
+        if (body.citations.length) {
+          const sourceSection = element('section');
+          sourceSection.className = 'source-section';
+          sourceSection.append(element('h3', 'Source pages'));
+          const list = element('ul');
+          list.className = 'source-list';
+          body.citations.forEach((citation) => {
+            const item = element('li');
+            const link = element('a', citation.page_title);
+            link.href = citation.page_url;
+            link.target = '_blank';
+            link.rel = 'noreferrer';
+            item.append(link);
+            list.append(item);
+          });
+          sourceSection.append(list);
+          card.append(sourceSection);
+        }
+        result.replaceChildren(card);
+      }
+
       form.addEventListener('submit', async (event) => {
-        event.preventDefault(); result.replaceChildren(); submit.disabled = true; submit.textContent = 'Searching…';
+        event.preventDefault();
+        setLoading(true);
         try {
-          const response = await fetch('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: document.querySelector('#question').value, backend_name: document.querySelector('#backend').value, retrieval_strategy: document.querySelector('#strategy').value, limit: Number(document.querySelector('#limit').value) }) });
-          const body = await response.json(); if (!response.ok) throw new Error(body.detail || 'Request failed.');
-          result.append(element('h2', body.abstained ? 'No reliable answer' : 'Answer'));
-          result.append(element('pre', body.answer));
-          result.append(element('p', `Backend: ${body.backend_name} · Strategy: ${body.retrieval_strategy} · Sources: ${body.citations.length}`)).className = 'meta';
-          if (body.citations.length) { const list = element('ul'); body.citations.forEach((citation) => { const item = element('li'); const link = element('a', citation.page_title); link.href = citation.page_url; link.target = '_blank'; link.rel = 'noreferrer'; item.append(link); list.append(item); }); result.append(element('h3', 'Confluence sources'), list); }
-        } catch (error) { const message = element('p', error.message); message.className = 'error'; result.append(message); }
-        finally { submit.disabled = false; submit.textContent = 'Ask'; }
+          const response = await fetch('/api/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              question: document.querySelector('#question').value,
+              backend_name: document.querySelector('#backend').value,
+              retrieval_strategy: document.querySelector('#strategy').value,
+              limit: Number(document.querySelector('#limit').value),
+            }),
+          });
+          const body = await response.json();
+          if (!response.ok) throw new Error(body.detail || 'The server rejected the request.');
+          renderResponse(body);
+        } catch (error) {
+          renderError(error.message || 'Check the local server configuration and try again.');
+        } finally {
+          setLoading(false);
+        }
       });
     </script>
   </body>

@@ -2,6 +2,10 @@
 
 This package handles one question at a time. It does not ingest, chunk, or upload content; those are offline preparation steps.
 
+It is reusable for any prepared Confluence collection. Choose a retrieval strategy at request time without changing the answer-generation flow.
+
+It is reusable for any prepared Confluence collection. Choose a retrieval strategy at request time without changing the answer-generation flow.
+
 ## Call flow
 
 ```text
@@ -41,6 +45,36 @@ Generate a grounded answer:
 ```powershell
 python .\ask_rag.py "How is this feature configured?" --backend opensearch --retrieval-strategy hybrid_rrf --limit 5
 ```
+
+```bash
+python query_rag.py "How is this feature configured?" --backend oracle --retrieval-strategy hybrid_rrf --limit 5
+python ask_rag.py "How is this feature configured?" --backend opensearch --retrieval-strategy hybrid_rrf --limit 5
+```
+
+## Configuration
+
+- `keyword` searches the local SQLite catalog only; the current shared CLI/API runtime still initializes OCI configuration at startup.
+- `dense` needs OCI embedding variables and the variables for the selected `oracle` or `opensearch` backend.
+- `hybrid_rrf` needs the SQLite catalog plus both dense-retrieval requirements.
+- Answer generation additionally needs `OCI_CHAT_MODEL_ID`, `OCI_CHAT_REQUEST_FORMAT` (`openai` or `cohere`), and optional `OCI_CHAT_MAX_TOKENS` / `OCI_CHAT_TEMPERATURE`.
+- `RAG_MAX_COSINE_DISTANCE` and `RAG_MIN_KNN_SCORE` control dense evidence gating. Tune them from evaluation results.
+
+All runtime configuration can live in the ignored root `.env` file; exported shell values override it.
+
+```bash
+python query_rag.py "How is this feature configured?" --backend oracle --retrieval-strategy hybrid_rrf --limit 5
+python ask_rag.py "How is this feature configured?" --backend opensearch --retrieval-strategy hybrid_rrf --limit 5
+```
+
+## Configuration
+
+- `keyword` needs the local SQLite catalog only.
+- `dense` needs OCI embedding variables and the variables for the selected `oracle` or `opensearch` backend.
+- `hybrid_rrf` needs the SQLite catalog plus both dense-retrieval requirements.
+- Answer generation additionally needs `OCI_CHAT_MODEL_ID`, `OCI_CHAT_REQUEST_FORMAT` (`openai` or `cohere`), and optional `OCI_CHAT_MAX_TOKENS` / `OCI_CHAT_TEMPERATURE`.
+- `RAG_MAX_COSINE_DISTANCE` and `RAG_MIN_KNN_SCORE` control dense evidence gating. Tune them from evaluation results.
+
+All runtime configuration can live in the ignored root `.env` file; exported shell values override it.
 
 ## Abstention
 

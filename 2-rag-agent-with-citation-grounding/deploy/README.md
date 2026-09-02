@@ -11,6 +11,8 @@
 
 The manifest reads passwords only through `secretKeyRef`; it contains no real password values. Do not place a Secret manifest with literal credentials in this repository.
 
+The root `.env` file is for local Python scripts only. For Kubernetes, use your platform's approved Secret-management mechanism and provide the resulting service host, port, username, and password to the local client through `ORACLE_VECTOR_*` variables.
+
 ## Scope
 
 This deployment is provided for local learning and prototyping. Production deployments need backup strategy, network policies, TLS, resource monitoring, database patching, high availability, and organization-approved secret management.

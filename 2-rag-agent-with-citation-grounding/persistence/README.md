@@ -2,6 +2,10 @@
 
 This layer stores the reusable RAG artifacts after embedding.
 
+It is reusable across Confluence collections: the catalog is a local metadata/citation source, while either vector adapter can hold the corresponding `EmbeddedChunk` records.
+
+It is reusable across Confluence collections: the catalog is a local metadata/citation source, while either vector adapter can hold the corresponding `EmbeddedChunk` records.
+
 | Package | Purpose |
 | --- | --- |
 | [`catalog/`](catalog/README.md) | SQLite metadata for pages, chunks, embeddings, and canonical citations. |
