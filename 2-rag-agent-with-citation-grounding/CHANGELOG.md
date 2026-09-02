@@ -2,7 +2,9 @@
 
 This project follows a lightweight, learning-focused changelog. Versions describe the capabilities of the reusable RAG pipeline, not a production release promise.
 
-## v1 — Confluence RAG prototype
+## v1 — Core Confluence RAG pipeline
+
+Status: complete baseline.
 
 - Added Confluence Data Center ingestion with environment-based authentication, request pacing, retries, and incremental refresh.
 - Added HTML-to-block parsing and two chunking strategies; the minimal section strategy is the default for cost-conscious indexing.
@@ -15,6 +17,8 @@ This project follows a lightweight, learning-focused changelog. Versions describ
 
 ## v2 — Retrieval strategies and local API/UI
 
+Status: complete refinement, merged into `master`.
+
 - Added strategy-based dense-vector, SQLite FTS5 keyword/BM25, and hybrid Reciprocal Rank Fusion retrieval.
 - Added a shared evaluation switch so every retrieval strategy can be measured with Oracle or OpenSearch.
 - Added a local FastAPI server with `/health` and `/api/ask` endpoints.
@@ -22,7 +26,7 @@ This project follows a lightweight, learning-focused changelog. Versions describ
 - Added ignored `.env` support with a placeholder-only template; explicit shell exports take precedence for CI and one-off runs.
 - Expanded cross-platform setup and module-level configuration documentation for Windows PowerShell and Linux/macOS Bash.
 
-## Future ideas
+## v3 — Production-readiness exploration
 
-- Add backend health checks, reranking, and native backend-specific hybrid retrieval.
-- Add authentication and deployment hardening before exposing the API beyond a trusted environment.
+- Add reranking and backend-native hybrid-search experiments, then compare them against the v2 strategies with the existing evaluation workflow.
+- Add API authentication, health checks, and deployment hardening before exposing the service outside a trusted environment.
