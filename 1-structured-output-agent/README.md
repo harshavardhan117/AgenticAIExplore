@@ -64,11 +64,21 @@ Run commands from this folder:
 cd "C:\Users\Harshavardhan Reddy\Downloads\Agentic AI Explore\AgenticAIExplore\1-structured-output-agent"
 ```
 
+```bash
+cd /path/to/AgenticAIExplore/1-structured-output-agent
+```
+
 Create a virtual environment and install the current runtime/test libraries:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install "jsonschema>=4.0" "oci>=2.0" "pydantic>=2.0" "openai>=1.0" "pytest>=8.0"
+```
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install "jsonschema>=4.0" "oci>=2.0" "pydantic>=2.0" "openai>=1.0" "pytest>=8.0"
 ```
 
 > The module currently runs from the repository folder. True `pip install -e .` support is a future packaging task because the multiple top-level folders are not yet configured for setuptools discovery.
@@ -82,7 +92,7 @@ C:\Users\<your-user>\.oci\config
 C:\Users\<your-user>\.oci\oci_api_key.pem
 ```
 
-Set these environment variables in the PowerShell session that runs the module:
+Set these environment variables in the shell session that runs the module. The required values are `OCI_COMPARTMENT_ID`, `OCI_ENDPOINT`, and `OCI_MODEL_ID`; `OCI_CONFIG_FILE_PATH` defaults to `~/.oci/config`, while `OCI_PROFILE_NAME` defaults to `DEFAULT`.
 
 ```powershell
 $env:OCI_CONFIG_FILE_PATH = "$env:USERPROFILE\.oci\config"
@@ -91,6 +101,33 @@ $env:OCI_COMPARTMENT_ID = "<your-compartment-ocid>"
 $env:OCI_ENDPOINT = "<your-OCI-inference-endpoint>"
 $env:OCI_MODEL_ID = "<your-on-demand-model-ocid>"
 ```
+
+```bash
+# Linux / macOS Bash
+export OCI_CONFIG_FILE_PATH="$HOME/.oci/config"
+export OCI_PROFILE_NAME="DEFAULT"
+export OCI_COMPARTMENT_ID="<your-compartment-ocid>"
+export OCI_ENDPOINT="https://inference.generativeai.<region>.oci.oraclecloud.com"
+export OCI_MODEL_ID="<your-on-demand-model-id>"
+```
+
+## OpenAI configuration
+
+Choose `"provider": "openai"` in an inline request and export the following variables instead of the OCI model settings:
+
+```powershell
+# Windows PowerShell
+$env:OPENAI_API_KEY = "<api-key>"
+$env:OPENAI_MODEL_ID = "<model-id>"
+```
+
+```bash
+# Linux / macOS Bash
+export OPENAI_API_KEY="<api-key>"
+export OPENAI_MODEL_ID="<model-id>"
+```
+
+The project deliberately reads from process environment variables. `.env` files are ignored by Git, but this project does not load one automatically; use your shell, CI secret manager, or a launcher that explicitly loads `.env` before starting Python. Never commit real values.
 
 Do not place their values, your OCI config, or your private key in Git.
 
@@ -116,6 +153,20 @@ request = {
 
 print(run(request).model_dump_json(indent=2))
 '@ | .\.venv\Scripts\python.exe -
+```
+
+```bash
+python - <<'PY'
+from main import run
+
+request = {
+    "user_summary": "The login API returns HTTP 500 for valid users. Create a medium-priority bug ticket.",
+    "output_format": "jira",
+    "output_format_version": "v1",
+}
+
+print(run(request).model_dump_json(indent=2))
+PY
 ```
 
 To use an inline output format instead, pass a JSON object directly:
@@ -154,6 +205,10 @@ Run all unit tests:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
+```
+
+```bash
+python -m pytest -q
 ```
 
 The current suite has 35 tests covering artifact resolution, prompt building, provider selection, adapters, JSON validation, retry behavior, errors, and the outer entry point.
