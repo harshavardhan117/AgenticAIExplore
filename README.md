@@ -9,3 +9,6 @@ A hands-on collection of small, independently understandable AI-engineering proj
 | `3-multi-tool-orchestrator-agent` | Multi-tool agent orchestration experiments. |
 
 Each project has its own README, setup instructions, and local safety guidance. Never commit credentials, private source content, generated embeddings, database files, or evaluation data from internal systems.
+
+See [Agentic AI Projects Playbook](agentic_ai_projects_playbook.md) for the
+remaining project roadmap and learning sequence.
