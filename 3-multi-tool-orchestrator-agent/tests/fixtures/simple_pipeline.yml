@@ -1,0 +1,24 @@
+stages:
+  - build
+  - test
+  - deploy
+
+build_api:
+  stage: build
+  script: ./build-api.sh
+
+lint:
+  stage: build
+  script: ./lint.sh
+
+test_api:
+  stage: test
+  needs:
+    - build_api
+    - lint
+  script: ./test-api.sh
+
+deploy_staging:
+  stage: deploy
+  needs: [test_api]
+  script: ./deploy-staging.sh
