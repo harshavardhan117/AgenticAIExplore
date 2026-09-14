@@ -1,0 +1,12 @@
+stages:
+  - build
+  - test
+
+build_app:
+  stage: build
+  script: echo building
+
+test_app:
+  stage: test
+  needs: [build_app]
+  script: echo testing

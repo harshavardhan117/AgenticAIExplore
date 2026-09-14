@@ -1,0 +1,10 @@
+stages: [build, test]
+
+build_app:
+  stage: build
+  script: echo build
+
+test_app:
+  stage: test
+  needs: [build_app, nonexistent_job]
+  script: echo test

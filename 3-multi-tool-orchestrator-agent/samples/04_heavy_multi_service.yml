@@ -1,0 +1,85 @@
+stages: [build, unit_test, integration_test, security_scan, package, deploy]
+
+build_service_a:
+  stage: build
+  script: echo build a
+
+build_service_b:
+  stage: build
+  script: echo build b
+
+build_service_c:
+  stage: build
+  script: echo build c
+
+lint_service_a:
+  stage: build
+  script: echo lint a
+
+lint_service_b:
+  stage: build
+  script: echo lint b
+
+lint_service_c:
+  stage: build
+  script: echo lint c
+
+unit_test_a:
+  stage: unit_test
+  needs: [build_service_a]
+  script: echo unit test a
+
+unit_test_b:
+  stage: unit_test
+  needs: [build_service_b]
+  script: echo unit test b
+
+unit_test_c:
+  stage: unit_test
+  needs: [build_service_c]
+  script: echo unit test c
+
+integration_test:
+  stage: integration_test
+  needs: [unit_test_a, unit_test_b, unit_test_c]
+  script: echo integration test
+
+security_scan_a:
+  stage: security_scan
+  needs: [build_service_a]
+  script: echo scan a
+
+security_scan_b:
+  stage: security_scan
+  needs: [build_service_b]
+  script: echo scan b
+
+security_scan_c:
+  stage: security_scan
+  needs: [build_service_c]
+  script: echo scan c
+
+package_a:
+  stage: package
+  needs: [unit_test_a, security_scan_a]
+  script: echo package a
+
+package_b:
+  stage: package
+  needs: [unit_test_b, security_scan_b]
+  script: echo package b
+
+package_c:
+  stage: package
+  needs: [unit_test_c, security_scan_c]
+  script: echo package c
+
+deploy_staging:
+  stage: deploy
+  needs: [package_a, package_b, package_c, integration_test]
+  script: echo deploy staging
+
+deploy_prod:
+  stage: deploy
+  needs: [deploy_staging]
+  script: echo deploy prod

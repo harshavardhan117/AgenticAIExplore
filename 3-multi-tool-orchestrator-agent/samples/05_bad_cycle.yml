@@ -1,0 +1,11 @@
+stages: [build, test]
+
+job_a:
+  stage: build
+  needs: [job_b]
+  script: echo a
+
+job_b:
+  stage: test
+  needs: [job_a]
+  script: echo b

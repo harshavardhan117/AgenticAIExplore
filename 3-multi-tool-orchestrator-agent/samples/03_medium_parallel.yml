@@ -1,0 +1,28 @@
+stages: [build, test, deploy]
+
+build_api:
+  stage: build
+  script: echo build api
+
+build_web:
+  stage: build
+  script: echo build web
+
+lint:
+  stage: build
+  script: echo lint
+
+test_api:
+  stage: test
+  needs: [build_api, lint]
+  script: echo test api
+
+test_web:
+  stage: test
+  needs: [build_web, lint]
+  script: echo test web
+
+deploy_staging:
+  stage: deploy
+  needs: [test_api, test_web]
+  script: echo deploy staging
