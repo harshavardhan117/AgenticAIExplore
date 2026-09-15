@@ -5,6 +5,7 @@ import os
 from ai.base import AIReviewer
 from ai.claude_reviewer import ClaudeReviewer
 from ai.gemini_reviewer import GeminiReviewer
+from ai.logging_reviewer import LoggingAIReviewer
 
 _PROVIDERS: dict[str, type[AIReviewer]] = {
     "gemini": GeminiReviewer,
@@ -21,4 +22,4 @@ def build_ai_reviewer(provider: str | None = None) -> AIReviewer:
     except KeyError:
         raise ValueError(f"Unknown AI provider '{name}'. Choose one of: {', '.join(_PROVIDERS)}") from None
 
-    return reviewer_cls()
+    return LoggingAIReviewer(reviewer_cls())

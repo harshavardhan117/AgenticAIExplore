@@ -11,12 +11,15 @@ from ai.factory import build_ai_reviewer
 from domain.models import AIReviewInput, PipelineReport
 from graph.graph_analyzer import analyze_graph
 from graph.graph_builder import build_graph
+from observability.context import new_run_id
 from parsers.registry import build_default_registry
 from rendering.renderer import render
 from tools.yaml_loader import load_yaml_document
 
 
 def run(yaml_path: Path, ai_mode: bool = False) -> PipelineReport:
+    new_run_id()
+
     document = load_yaml_document(yaml_path)
 
     registry = build_default_registry()

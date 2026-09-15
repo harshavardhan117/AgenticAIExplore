@@ -10,7 +10,7 @@ def test_defaults_to_gemini_when_unset(monkeypatch):
 
     reviewer = build_ai_reviewer()
 
-    assert isinstance(reviewer, GeminiReviewer)
+    assert isinstance(reviewer._inner, GeminiReviewer)
 
 
 def test_reads_provider_from_env(monkeypatch):
@@ -18,7 +18,7 @@ def test_reads_provider_from_env(monkeypatch):
 
     reviewer = build_ai_reviewer()
 
-    assert isinstance(reviewer, ClaudeReviewer)
+    assert isinstance(reviewer._inner, ClaudeReviewer)
 
 
 def test_explicit_argument_overrides_env(monkeypatch):
@@ -26,7 +26,7 @@ def test_explicit_argument_overrides_env(monkeypatch):
 
     reviewer = build_ai_reviewer("claude")
 
-    assert isinstance(reviewer, ClaudeReviewer)
+    assert isinstance(reviewer._inner, ClaudeReviewer)
 
 
 def test_unknown_provider_raises():

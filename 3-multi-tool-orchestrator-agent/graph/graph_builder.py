@@ -1,8 +1,10 @@
 """Builds a PipelineGraph (nodes + dependency edges) from a parsed PipelineDefinition."""
 
 from domain.models import Edge, Finding, FindingSeverity, PipelineDefinition, PipelineGraph
+from observability.tool_logging import log_tool_call
 
 
+@log_tool_call
 def build_graph(pipeline: PipelineDefinition) -> tuple[PipelineGraph, list[Finding]]:
     edges: list[Edge] = []
     findings: list[Finding] = []

@@ -1,6 +1,7 @@
 """CLI entry point. Thin wrapper: parse args, call the orchestrator, print the result."""
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from orchestrator import run
 
 def main() -> None:
     load_dotenv()
+    logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stderr)
 
     parser = argparse.ArgumentParser(description="Analyze a GitLab CI pipeline YAML file.")
     parser.add_argument("yaml_path", type=Path, help="Path to the .gitlab-ci.yml file")

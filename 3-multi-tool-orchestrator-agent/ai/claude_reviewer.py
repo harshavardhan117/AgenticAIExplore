@@ -9,6 +9,7 @@ from ai.prompt import build_prompt, parse_response
 from domain.models import AIReviewInput, AIReviewOutput
 
 _MODEL = "claude-opus-5"
+_TIMEOUT_SECONDS = 120.0
 
 
 class ClaudeReviewer(AIReviewer):
@@ -20,7 +21,7 @@ class ClaudeReviewer(AIReviewer):
     def _get_client(self) -> anthropic.Anthropic:
         if self._client is None:
             api_key = os.environ["ANTHROPIC_API_KEY"]
-            self._client = anthropic.Anthropic(api_key=api_key)
+            self._client = anthropic.Anthropic(api_key=api_key, timeout=_TIMEOUT_SECONDS)
         return self._client
 
     def chat(self, review_input: AIReviewInput) -> AIReviewOutput:

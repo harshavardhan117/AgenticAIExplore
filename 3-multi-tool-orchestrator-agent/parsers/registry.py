@@ -3,6 +3,7 @@
 from domain.models import LoadedYamlDocument, PipelineDefinition
 from parsers.base import Parser
 from parsers.gitlab import GitLabParser
+from parsers.logging_parser import LoggingParser
 
 
 class ParserRegistry:
@@ -27,5 +28,5 @@ class ParserRegistry:
 def build_default_registry() -> ParserRegistry:
     """Registers every built-in parser strategy. Add new platforms here only."""
     registry = ParserRegistry()
-    registry.register(GitLabParser())
+    registry.register(LoggingParser(GitLabParser()))
     return registry

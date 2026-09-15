@@ -5,8 +5,10 @@ from pathlib import Path
 import yaml
 
 from domain.models import LoadedYamlDocument
+from observability.tool_logging import log_tool_call
 
 
+@log_tool_call
 def load_yaml_document(path: Path) -> LoadedYamlDocument:
     content = yaml.safe_load(path.read_text())
 

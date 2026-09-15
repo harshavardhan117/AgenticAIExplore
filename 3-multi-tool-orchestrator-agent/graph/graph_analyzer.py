@@ -1,8 +1,10 @@
 """Analyzes a PipelineGraph: cycle detection + topological execution layers via Kahn's algorithm."""
 
 from domain.models import AnalysisResult, Finding, FindingSeverity, PipelineGraph
+from observability.tool_logging import log_tool_call
 
 
+@log_tool_call
 def analyze_graph(graph: PipelineGraph) -> AnalysisResult:
     adjacency: dict[str, list[str]] = {job_id: [] for job_id in graph.nodes}
     in_degree: dict[str, int] = {job_id: 0 for job_id in graph.nodes}

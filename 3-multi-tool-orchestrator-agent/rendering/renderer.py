@@ -1,8 +1,10 @@
 """Renders a PipelineGraph + AnalysisResult into a Mermaid diagram and a Markdown report."""
 
 from domain.models import AnalysisResult, Finding, PipelineDefinition, PipelineGraph
+from observability.tool_logging import log_tool_call
 
 
+@log_tool_call
 def render(
     pipeline: PipelineDefinition,
     graph: PipelineGraph,

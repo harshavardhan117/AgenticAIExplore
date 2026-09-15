@@ -3,12 +3,14 @@
 import os
 
 from google import genai
+from google.genai import types
 
 from ai.base import AIReviewer
 from ai.prompt import build_prompt, parse_response
 from domain.models import AIReviewInput, AIReviewOutput
 
 _MODEL = "gemini-3.6-flash"
+_TIMEOUT_MS = 120_000
 
 
 class GeminiReviewer(AIReviewer):
@@ -20,7 +22,7 @@ class GeminiReviewer(AIReviewer):
     def _get_client(self) -> genai.Client:
         if self._client is None:
             api_key = os.environ["GEMINI_API_KEY"]
-            self._client = genai.Client(api_key=api_key)
+            self._client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=_TIMEOUT_MS))
         return self._client
 
     def chat(self, review_input: AIReviewInput) -> AIReviewOutput:
