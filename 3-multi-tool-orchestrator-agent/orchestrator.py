@@ -5,9 +5,11 @@ own independent module (parsers, graph, rendering). This function only calls
 them in order and assembles the result.
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from ai.factory import build_ai_reviewer
+from checkers.registry import build_default_checkers
 from domain.models import AIReviewInput, PipelineReport
 from graph.graph_analyzer import analyze_graph
 from graph.graph_builder import build_graph
@@ -25,7 +27,13 @@ def run(yaml_path: Path, ai_mode: bool = False) -> PipelineReport:
     registry = build_default_registry()
     pipeline = registry.parse(document)
 
-    graph, validation_findings = build_graph(pipeline)
+    checkers = build_default_checkers()
+    with ThreadPoolExecutor(max_workers=len(checkers)) as pool:
+        futures = [pool.submit(checker.check, pipeline) for checker in checkers]
+        checker_findings = [finding for future in futures for finding in future.result()]
+
+    graph, graph_findings = build_graph(pipeline)
+    validation_findings = checker_findings + graph_findings
     analysis = analyze_graph(graph)
 
     all_findings = validation_findings + analysis.findings

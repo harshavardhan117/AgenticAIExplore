@@ -14,6 +14,8 @@ YAML file
   -> tools.yaml_loader        load + validate YAML shape
   -> parsers.registry         pick the right parser strategy (can_parse)
   -> parsers.gitlab           GitLab CI -> PipelineDefinition
+  -> checkers.registry        3 independent checkers, dispatched in parallel
+                               (undefined stage, orphan job, self-dependency)
   -> graph.graph_builder      PipelineDefinition -> PipelineGraph
                                (dangling `needs` -> Finding, not a crash)
   -> graph.graph_analyzer     Kahn's algorithm -> cycles + execution layers
@@ -25,6 +27,10 @@ YAML file
 and assembles the result; it owns no logic itself. `main.py` is a thin CLI
 wrapper over the orchestrator.
 
+Every step also logs `tool=... status=... duration_ms=...` under one shared
+per-run trace ID (`observability/`), and the AI call is capped at a 2-minute
+timeout on both providers.
+
 ## Project layout
 
 ```text
@@ -32,11 +38,16 @@ domain/models.py     Every entity: JobDefinition, PipelineGraph, Finding,
                       AnalysisResult, AIReviewInput/Output, PipelineReport
 tools/                General-purpose tools (yaml_loader today)
 parsers/              Parser strategy interface (ABC) + GitLabParser + registry
+                      + LoggingParser (Decorator pattern, wraps any Parser)
+checkers/             Checker interface (ABC) + 3 independent checkers +
+                      registry — dispatched via ThreadPoolExecutor
 graph/                Graph builder + analyzer (plain functions, no
                       interface needed — only one implementation of each)
 rendering/            Mermaid + Markdown report renderer
 ai/                   AIReviewer interface (ABC) + Gemini/Claude adapters +
-                      factory (env-driven provider choice) + shared prompt
+                      factory (env-driven provider choice) + shared prompt +
+                      LoggingAIReviewer (Decorator pattern, wraps any AIReviewer)
+observability/        Per-run trace ID (contextvars) + tool-call log decorator
 orchestrator.py       Service layer wiring everything together
 main.py               CLI entry point
 samples/              Hand-written example pipelines, good and bad, for
@@ -50,11 +61,17 @@ tests/                Mirrors the folder structure above 1:1
   implementations exist or are planned: GitLab/GitHub, Gemini/Claude).
   `graph_builder`/`graph_analyzer` are plain functions — only one algorithm
   each, an interface would be over-engineering (YAGNI).
-- **Checkers were dropped.** Validation that would've been a separate
-  "checker" tool (e.g. dangling `needs` references) is handled directly by
-  `graph_builder`: it skips the bad edge and returns a `Finding` instead of
-  raising. Parser failures (can't even build a `PipelineDefinition`) are
-  still fatal — they raise.
+- **Checkers are independent, dispatched in parallel — but honestly, not for speed.**
+  Three checkers (undefined stage reference, orphan job, self-dependency) run
+  via `ThreadPoolExecutor`. Since they're pure in-memory, CPU-light checks with
+  no I/O, threading gives no real speedup here (nothing ever waits, so nothing
+  ever hands off the GIL) — this is built to demonstrate the fan-out/fan-in
+  pattern, not because it measurably helps at this scale.
+  Dangling `needs` references are a special case: handled directly by
+  `graph_builder` (skips the bad edge, returns a `Finding`) rather than as a
+  standalone checker, since resolving it requires the same job lookup the
+  graph builder already does. Parser failures (can't even build a
+  `PipelineDefinition`) are still fatal — they raise.
 - **Findings have two sources, kept separate in the data model**
   (`validation_findings` from the graph builder vs. `analysis.findings` from
   cycle detection) but **merged before rendering or sending to AI** — the
@@ -99,12 +116,11 @@ flow (including a dangling-`needs` end-to-end case).
 
 ## Samples
 
-`samples/` has 8 hand-written pipelines for manually exercising the CLI:
+`samples/` has 9 hand-written pipelines for manually exercising the CLI:
 `01`-`04` go from a single job to an 18-job/6-stage pipeline (all should
-produce a clean report); `05`-`08` are deliberately broken (a cycle, a
-dangling `needs`, a non-mapping YAML file, and an unrecognized format) to
-exercise every error path — two degrade gracefully into a `Finding`, two
-are hard failures with a clean CLI error message and exit code 1.
+produce a clean report); `05`-`09` are deliberately broken (a cycle, a
+dangling `needs`, a non-mapping YAML file, an unrecognized format, and a
+file that trips all 3 checkers at once) to exercise every error path.
 
 ## Current limitations
 
@@ -116,3 +132,15 @@ are hard failures with a clean CLI error message and exit code 1.
   artifact relationships or stage-order-only waits yet.
 - No historical/duration data — execution layers are structural only, not a
   real timing estimate.
+- The 3 checkers have no dedicated unit tests yet — only exercised
+  end-to-end via the orchestrator/CLI.
+
+## Probable next items
+
+- Multi-file `include:` support — root file discovers/resolves included
+  local YAML files (likely in `main.py`, not core logic), core `Parser`
+  contract changes to accept a list of documents and merge them.
+- GitHub Actions as a second `Parser` strategy (surfaces that `stage` needs
+  to become optional on the shared model — GitHub Actions has no stage
+  concept at all).
+- CLI `--output`/`--format json` flags for structured/persisted reports.

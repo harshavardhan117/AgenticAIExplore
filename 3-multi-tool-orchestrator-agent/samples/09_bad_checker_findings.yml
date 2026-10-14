@@ -1,0 +1,19 @@
+stages: [build, test]
+
+build_app:
+  stage: build
+  script: echo build
+
+test_app:
+  stage: nonexistent_stage
+  needs: [build_app]
+  script: echo test
+
+standalone_lint:
+  stage: build
+  script: echo lint
+
+looping_job:
+  stage: test
+  needs: [looping_job]
+  script: echo loop

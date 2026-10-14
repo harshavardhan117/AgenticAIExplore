@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.0 - 2026-09-16
+
+### Added
+- 3 independent checkers (undefined stage reference, orphan job,
+  self-dependency), behind a `Checker` ABC, dispatched via
+  `ThreadPoolExecutor` in `orchestrator.run()`. Chosen as a demonstration of
+  the fan-out/fan-in pattern, not for a real speedup — these are CPU-light,
+  in-memory checks with no I/O, so threading gives no measurable win here;
+  multiprocessing would be the textbook-correct tool for genuine parallel
+  speedup on CPU-only work, but its overhead isn't worth it at this scale.
+- Sample pipeline (`samples/09_bad_checker_findings.yml`) exercising all 3
+  new checkers plus the existing cycle detector at once.
+
+### Known gaps
+- No dedicated unit tests for the 3 checkers yet (covered only via the
+  orchestrator/CLI end-to-end path).
+
 ## 0.2.0 - 2026-09-15
 
 ### Added
