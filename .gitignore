@@ -221,3 +221,6 @@ __marimo__/
 *.db
 *.db-wal
 *.db-shm
+
+# Personal notes kept locally only
+agentic_ai_projects_playbook.md
