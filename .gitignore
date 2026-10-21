@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project 4 API: the local runs database (SQLite) and its journal files
+*.db
+*.db-wal
+*.db-shm
