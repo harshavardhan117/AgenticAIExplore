@@ -10,3 +10,5 @@ A hands-on collection of small, independently understandable AI-engineering proj
 | `4-react-cve-remediation-agent` | A LangGraph ReAct agent that finds CVEs in a Python dependency tree and proposes a pip-verified fix set; available as a CLI and as a FastAPI + Celery + RabbitMQ service (Docker Compose). |
 
 Each project has its own README, setup instructions, and local safety guidance. Never commit credentials, private source content, generated embeddings, database files, or evaluation data from internal systems.
+
+Project 4 (PatchPilot) has a screenshot-led README with an architecture diagram, and its own docs folder.
